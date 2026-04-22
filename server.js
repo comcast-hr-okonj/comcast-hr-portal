@@ -10,6 +10,9 @@ app.use(express.json());
 
 const SECRET = "comcast-hr-secret";
 
+// PORT FIX (IMPORTANT FOR RENDER)
+const PORT = process.env.PORT || 3000;
+
 // DATABASE
 const db = new sqlite3.Database("./database.sqlite");
 
@@ -35,7 +38,7 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// CREATE ADMIN (YOUR LOGIN)
+// CREATE ADMIN
 const createAdmin = async () => {
   const hash = await bcrypt.hash("09015159496", 10);
 
@@ -56,17 +59,15 @@ app.post("/login", (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ error: "Invalid password" });
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      SECRET,
-      { expiresIn: "2h" }
-    );
+    const token = jwt.sign({ id: user.id, role: user.role }, SECRET, {
+      expiresIn: "2h"
+    });
 
     res.json({ token });
   });
 });
 
-// AUTH
+// AUTH MIDDLEWARE
 function auth(req, res, next) {
   const token = req.headers.authorization;
 
@@ -97,6 +98,6 @@ app.get("/applications", auth, (req, res) => {
 });
 
 // START SERVER
-app.listen(3000, () => {
-  console.log("🚀 HR Server running on http://localhost:3000");
+app.listen(PORT, () => {
+  console.log("🚀 HR Server running on port " + PORT);
 });
