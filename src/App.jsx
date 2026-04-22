@@ -37,7 +37,7 @@ export default function App() {
     loadApps(data.token);
   };
 
-  // LOAD APPLICATIONS
+  // LOAD APPS
   const loadApps = async (tok) => {
     const res = await fetch(API + "/applications", {
       headers: {
