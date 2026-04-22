@@ -1,8 +1,8 @@
 import { useState } from "react";
 
-export default function App() {
-  const API = "https://comcast-hr-portal.onrender.com";
+const API = "https://comcast-hr-portal.onrender.com";
 
+export default function App() {
   const [token, setToken] = useState("");
   const [apps, setApps] = useState([]);
 
@@ -18,21 +18,6 @@ export default function App() {
     position: ""
   });
 
-  // HEADER
-  const Header = () => (
-    <div style={{
-      width: "100%",
-      background: "#0b3d91",
-      color: "white",
-      padding: 15,
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center"
-    }}>
-      <h2>Comcast HR Portal</h2>
-    </div>
-  );
-
   // LOGIN
   const handleLogin = async () => {
     const res = await fetch(API + "/login", {
@@ -44,7 +29,7 @@ export default function App() {
     const data = await res.json();
 
     if (!res.ok) {
-      alert("Login failed");
+      alert(data.error);
       return;
     }
 
@@ -55,7 +40,9 @@ export default function App() {
   // LOAD APPLICATIONS
   const loadApps = async (tok) => {
     const res = await fetch(API + "/applications", {
-      headers: { Authorization: tok }
+      headers: {
+        Authorization: "Bearer " + tok
+      }
     });
 
     const data = await res.json();
@@ -77,8 +64,6 @@ export default function App() {
   if (!token) {
     return (
       <div>
-        <Header />
-
         <h2>Apply for Job</h2>
 
         <input placeholder="Name" onChange={e => setForm({ ...form, name: e.target.value })} />
@@ -103,8 +88,6 @@ export default function App() {
   // ADMIN DASHBOARD
   return (
     <div>
-      <Header />
-
       <h2>Admin Dashboard</h2>
 
       {apps.map((a) => (
