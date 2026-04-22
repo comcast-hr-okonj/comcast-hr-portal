@@ -12,10 +12,11 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const SECRET = "comcast-hr-secret";
 
-// ✅ SAFE DATABASE FOR RENDER
+/* =========================
+   DATABASE (Render safe)
+========================= */
 const db = new sqlite3.Database("/tmp/database.sqlite");
 
-// ---------------- CREATE TABLES ----------------
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -38,7 +39,9 @@ db.serialize(() => {
   `);
 });
 
-// ---------------- ADMIN AUTO CREATE ----------------
+/* =========================
+   ADMIN ACCOUNT (AUTO CREATE)
+========================= */
 const createAdmin = async () => {
   const hash = await bcrypt.hash("09015159496", 10);
 
@@ -50,12 +53,16 @@ const createAdmin = async () => {
 
 createAdmin();
 
-// ---------------- HOME ----------------
+/* =========================
+   HOME ROUTE
+========================= */
 app.get("/", (req, res) => {
   res.send("🚀 Comcast HR System Running");
 });
 
-// ---------------- LOGIN ----------------
+/* =========================
+   LOGIN
+========================= */
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -75,7 +82,9 @@ app.post("/login", (req, res) => {
   });
 });
 
-// ---------------- AUTH MIDDLEWARE ----------------
+/* =========================
+   AUTH MIDDLEWARE
+========================= */
 function auth(req, res, next) {
   const token = req.headers.authorization;
 
@@ -87,7 +96,9 @@ function auth(req, res, next) {
   }
 }
 
-// ---------------- APPLY (PUBLIC) ----------------
+/* =========================
+   APPLY (PUBLIC)
+========================= */
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -98,14 +109,18 @@ app.post("/applications", (req, res) => {
   );
 });
 
-// ---------------- GET APPLICATIONS (ADMIN) ----------------
+/* =========================
+   GET APPLICATIONS (ADMIN ONLY)
+========================= */
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
   });
 });
 
-// ---------------- START SERVER ----------------
+/* =========================
+   START SERVER
+========================= */
 app.listen(PORT, () => {
   console.log("🚀 Server running on port " + PORT);
 });
