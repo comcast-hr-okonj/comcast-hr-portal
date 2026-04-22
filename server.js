@@ -5,18 +5,20 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const app = express();
+
+// middleware (MUST be at top)
 app.use(cors());
 app.use(express.json());
 
 const SECRET = "comcast-hr-secret";
 
-// IMPORTANT FOR RENDER
+// Render PORT (VERY IMPORTANT)
 const PORT = process.env.PORT || 3000;
 
-// DATABASE
+// DATABASE (simple file DB)
 const db = new sqlite3.Database("./database.sqlite");
 
-// USERS TABLE
+// -------------------- TABLES --------------------
 db.run(`
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +28,6 @@ CREATE TABLE IF NOT EXISTS users (
 )
 `);
 
-// APPLICATIONS TABLE
 db.run(`
 CREATE TABLE IF NOT EXISTS applications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,7 +39,7 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// CREATE ADMIN USER (AUTO RUN)
+// -------------------- ADMIN USER --------------------
 const createAdmin = async () => {
   const hash = await bcrypt.hash("09015159496", 10);
 
@@ -50,7 +51,7 @@ const createAdmin = async () => {
 
 createAdmin();
 
-// LOGIN
+// -------------------- LOGIN --------------------
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -70,7 +71,7 @@ app.post("/login", (req, res) => {
   });
 });
 
-// AUTH MIDDLEWARE
+// -------------------- AUTH MIDDLEWARE --------------------
 function auth(req, res, next) {
   const token = req.headers.authorization;
 
@@ -82,7 +83,7 @@ function auth(req, res, next) {
   }
 }
 
-// APPLY (PUBLIC)
+// -------------------- APPLY (PUBLIC) --------------------
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -93,14 +94,14 @@ app.post("/applications", (req, res) => {
   );
 });
 
-// GET APPLICATIONS (ADMIN ONLY)
+// -------------------- GET APPLICATIONS (ADMIN ONLY) --------------------
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
   });
 });
 
-// START SERVER
+// -------------------- START SERVER --------------------
 app.listen(PORT, () => {
   console.log("🚀 HR Server running on port " + PORT);
 });
