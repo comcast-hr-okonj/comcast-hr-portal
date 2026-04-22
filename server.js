@@ -1,19 +1,21 @@
 const express = require("express");
-const cors = require("cors");
 const sqlite3 = require("sqlite3").verbose();
+const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
 const SECRET = "comcast-hr-secret";
+const PORT = process.env.PORT || 3000;
 
+// DATABASE
 const db = new sqlite3.Database("./database.sqlite");
 
-// ================= TABLES =================
+// TABLES
 db.run(`
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,23 +36,19 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// ================= ADMIN =================
+// CREATE ADMIN
 const createAdmin = async () => {
-  const hash = await bcrypt.hash("1234", 10);
+  const hash = await bcrypt.hash("09015159496", 10);
 
   db.run(
     "INSERT OR IGNORE INTO users (email,password,role) VALUES (?,?,?)",
-    ["admin@comcast.com", hash, "admin"]
+    ["okonjortestimony2008@gmail.com", hash, "admin"]
   );
 };
+
 createAdmin();
 
-// ================= HOME =================
-app.get("/", (req, res) => {
-  res.send("HR Backend Running");
-});
-
-// ================= LOGIN =================
+// LOGIN
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -60,22 +58,36 @@ app.post("/login", (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ error: "Invalid password" });
 
-    const token = jwt.sign({ id: user.id, role: user.role }, SECRET);
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      SECRET,
+      { expiresIn: "2h" }
+    );
+
     res.json({ token });
   });
 });
 
-// ================= AUTH =================
+// AUTH MIDDLEWARE (FIXED)
 function auth(req, res, next) {
+  const header = req.headers.authorization;
+
+  if (!header) {
+    return res.status(401).json({ error: "No token" });
+  }
+
+  const token = header.split(" ")[1];
+
   try {
-    jwt.verify(req.headers.authorization, SECRET);
+    const decoded = jwt.verify(token, SECRET);
+    req.user = decoded;
     next();
-  } catch {
+  } catch (err) {
     res.status(401).json({ error: "Unauthorized" });
   }
 }
 
-// ================= APPLY =================
+// APPLY FORM
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -86,13 +98,14 @@ app.post("/applications", (req, res) => {
   );
 });
 
-// ================= GET APPLICATIONS =================
+// GET APPLICATIONS
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
   });
 });
 
+// START SERVER
 app.listen(PORT, () => {
-  console.log("Server running on " + PORT);
+  console.log("🚀 HR Server running on port " + PORT);
 });
