@@ -6,19 +6,21 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 
-// middleware (MUST be at top)
+// Middleware
 app.use(cors());
 app.use(express.json());
 
 const SECRET = "comcast-hr-secret";
 
-// Render PORT (VERY IMPORTANT)
+// Render port
 const PORT = process.env.PORT || 3000;
 
-// DATABASE (simple file DB)
-const db = new sqlite3.Database("./database.sqlite");
+// Database
+const db = new sqlite3.Database("./database.sqlite", (err) => {
+  if (err) console.log("DB error:", err);
+});
 
-// -------------------- TABLES --------------------
+// ---------------- TABLES ----------------
 db.run(`
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +41,7 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// -------------------- ADMIN USER --------------------
+// ---------------- ADMIN ----------------
 const createAdmin = async () => {
   const hash = await bcrypt.hash("09015159496", 10);
 
@@ -51,11 +53,12 @@ const createAdmin = async () => {
 
 createAdmin();
 
-// -------------------- LOGIN --------------------
+// ---------------- LOGIN ----------------
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
   db.get("SELECT * FROM users WHERE email=?", [email], async (err, user) => {
+    if (err) return res.status(500).json({ error: "DB error" });
     if (!user) return res.status(401).json({ error: "Invalid email" });
 
     const match = await bcrypt.compare(password, user.password);
@@ -71,19 +74,19 @@ app.post("/login", (req, res) => {
   });
 });
 
-// -------------------- AUTH MIDDLEWARE --------------------
+// ---------------- AUTH ----------------
 function auth(req, res, next) {
   const token = req.headers.authorization;
 
   try {
     jwt.verify(token, SECRET);
     next();
-  } catch (err) {
+  } catch {
     res.status(401).json({ error: "Unauthorized" });
   }
 }
 
-// -------------------- APPLY (PUBLIC) --------------------
+// ---------------- APPLY (PUBLIC) ----------------
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -94,14 +97,15 @@ app.post("/applications", (req, res) => {
   );
 });
 
-// -------------------- GET APPLICATIONS (ADMIN ONLY) --------------------
+// ---------------- GET APPLICATIONS (ADMIN) ----------------
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
+    if (err) return res.status(500).json({ error: "DB error" });
     res.json(rows);
   });
 });
 
-// -------------------- START SERVER --------------------
+// ---------------- START SERVER ----------------
 app.listen(PORT, () => {
   console.log("🚀 HR Server running on port " + PORT);
 });
