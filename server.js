@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// CREATE ADMIN USER (RUNS ON START)
+// CREATE ADMIN USER (AUTO RUN)
 const createAdmin = async () => {
   const hash = await bcrypt.hash("09015159496", 10);
 
@@ -50,7 +50,7 @@ const createAdmin = async () => {
 
 createAdmin();
 
-// LOGIN ROUTE
+// LOGIN
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -82,7 +82,7 @@ function auth(req, res, next) {
   }
 }
 
-// APPLY (PUBLIC ROUTE)
+// APPLY (PUBLIC)
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
