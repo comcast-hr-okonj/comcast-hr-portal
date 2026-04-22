@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// CREATE ADMIN
+// ADMIN
 const createAdmin = async () => {
   const hash = await bcrypt.hash("09015159496", 10);
 
@@ -47,6 +47,11 @@ const createAdmin = async () => {
 };
 
 createAdmin();
+
+// HOME ROUTE (fixes Cannot GET /)
+app.get("/", (req, res) => {
+  res.send("🚀 Comcast HR System Running");
+});
 
 // LOGIN
 app.post("/login", (req, res) => {
@@ -68,26 +73,23 @@ app.post("/login", (req, res) => {
   });
 });
 
-// AUTH MIDDLEWARE (FIXED)
+// AUTH MIDDLEWARE
 function auth(req, res, next) {
   const header = req.headers.authorization;
 
-  if (!header) {
-    return res.status(401).json({ error: "No token" });
-  }
+  if (!header) return res.status(401).json({ error: "No token" });
 
   const token = header.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, SECRET);
-    req.user = decoded;
+    req.user = jwt.verify(token, SECRET);
     next();
-  } catch (err) {
+  } catch {
     res.status(401).json({ error: "Unauthorized" });
   }
 }
 
-// APPLY FORM
+// APPLY JOB (PUBLIC)
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -98,14 +100,13 @@ app.post("/applications", (req, res) => {
   );
 });
 
-// GET APPLICATIONS
+// GET APPLICATIONS (ADMIN)
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
   });
 });
 
-// START SERVER
 app.listen(PORT, () => {
-  console.log("🚀 HR Server running on port " + PORT);
+  console.log("🚀 Server running on port " + PORT);
 });
