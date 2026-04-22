@@ -10,7 +10,7 @@ app.use(express.json());
 
 const SECRET = "comcast-hr-secret";
 
-// PORT FIX (IMPORTANT FOR RENDER)
+// IMPORTANT FOR RENDER
 const PORT = process.env.PORT || 3000;
 
 // DATABASE
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// CREATE ADMIN
+// CREATE ADMIN USER (RUNS ON START)
 const createAdmin = async () => {
   const hash = await bcrypt.hash("09015159496", 10);
 
@@ -47,9 +47,10 @@ const createAdmin = async () => {
     ["okonjortestimony2008@gmail.com", hash, "admin"]
   );
 };
+
 createAdmin();
 
-// LOGIN
+// LOGIN ROUTE
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -59,9 +60,11 @@ app.post("/login", (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ error: "Invalid password" });
 
-    const token = jwt.sign({ id: user.id, role: user.role }, SECRET, {
-      expiresIn: "2h"
-    });
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      SECRET,
+      { expiresIn: "2h" }
+    );
 
     res.json({ token });
   });
@@ -74,12 +77,12 @@ function auth(req, res, next) {
   try {
     jwt.verify(token, SECRET);
     next();
-  } catch {
+  } catch (err) {
     res.status(401).json({ error: "Unauthorized" });
   }
 }
 
-// APPLY (PUBLIC)
+// APPLY (PUBLIC ROUTE)
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -90,7 +93,7 @@ app.post("/applications", (req, res) => {
   );
 });
 
-// GET ALL (ADMIN ONLY)
+// GET APPLICATIONS (ADMIN ONLY)
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
