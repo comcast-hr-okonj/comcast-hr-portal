@@ -5,64 +5,52 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 const SECRET = "comcast-hr-secret";
 
-/* =========================
-   DATABASE (Render safe)
-========================= */
-const db = new sqlite3.Database("/tmp/database.sqlite");
+const db = new sqlite3.Database("./database.sqlite");
 
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE,
-      password TEXT,
-      role TEXT
-    )
-  `);
+// ================= TABLES =================
+db.run(`
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT UNIQUE,
+  password TEXT,
+  role TEXT
+)
+`);
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS applications (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      email TEXT,
-      number TEXT,
-      position TEXT,
-      status TEXT
-    )
-  `);
-});
+db.run(`
+CREATE TABLE IF NOT EXISTS applications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  email TEXT,
+  number TEXT,
+  position TEXT,
+  status TEXT
+)
+`);
 
-/* =========================
-   ADMIN ACCOUNT (AUTO CREATE)
-========================= */
+// ================= ADMIN =================
 const createAdmin = async () => {
-  const hash = await bcrypt.hash("09015159496", 10);
+  const hash = await bcrypt.hash("1234", 10);
 
   db.run(
     "INSERT OR IGNORE INTO users (email,password,role) VALUES (?,?,?)",
     ["admin@comcast.com", hash, "admin"]
   );
 };
-
 createAdmin();
 
-/* =========================
-   HOME ROUTE
-========================= */
+// ================= HOME =================
 app.get("/", (req, res) => {
-  res.send("🚀 Comcast HR System Running");
+  res.send("HR Backend Running");
 });
 
-/* =========================
-   LOGIN
-========================= */
+// ================= LOGIN =================
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -72,33 +60,22 @@ app.post("/login", (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ error: "Invalid password" });
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      SECRET,
-      { expiresIn: "2h" }
-    );
-
+    const token = jwt.sign({ id: user.id, role: user.role }, SECRET);
     res.json({ token });
   });
 });
 
-/* =========================
-   AUTH MIDDLEWARE
-========================= */
+// ================= AUTH =================
 function auth(req, res, next) {
-  const token = req.headers.authorization;
-
   try {
-    jwt.verify(token, SECRET);
+    jwt.verify(req.headers.authorization, SECRET);
     next();
   } catch {
     res.status(401).json({ error: "Unauthorized" });
   }
 }
 
-/* =========================
-   APPLY (PUBLIC)
-========================= */
+// ================= APPLY =================
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -109,18 +86,13 @@ app.post("/applications", (req, res) => {
   );
 });
 
-/* =========================
-   GET APPLICATIONS (ADMIN ONLY)
-========================= */
+// ================= GET APPLICATIONS =================
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
   });
 });
 
-/* =========================
-   START SERVER
-========================= */
 app.listen(PORT, () => {
-  console.log("🚀 Server running on port " + PORT);
+  console.log("Server running on " + PORT);
 });
