@@ -6,26 +6,22 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 
-app.use(cors({
-  origin: "*"
-}));
-
+app.use(cors());
 app.use(express.json());
 
-const SECRET = "comcast-hr-secret";
 const PORT = process.env.PORT || 3000;
+const SECRET = "secret123";
 
 // DB
 const db = new sqlite3.Database("./database.sqlite");
 
-// TABLES
+// CREATE TABLES
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE,
-      password TEXT,
-      role TEXT
+      password TEXT
     )
   `);
 
@@ -40,16 +36,16 @@ db.serialize(() => {
     )
   `);
 
-  // ADMIN (RESET SAFE)
+  // CREATE ADMIN
   const hash = bcrypt.hashSync("1234", 10);
 
   db.run(
-    "INSERT OR IGNORE INTO users (email,password,role) VALUES (?,?,?)",
-    ["admin@comcast.com", hash, "admin"]
+    "INSERT OR IGNORE INTO users (email,password) VALUES (?,?)",
+    ["admin@comcast.com", hash]
   );
 });
 
-// TEST ROUTE
+// TEST
 app.get("/", (req, res) => {
   res.json({ message: "HR API Running" });
 });
@@ -61,13 +57,10 @@ app.post("/login", (req, res) => {
   db.get("SELECT * FROM users WHERE email=?", [email], (err, user) => {
     if (!user) return res.status(401).json({ error: "User not found" });
 
-    const ok = bcrypt.compareSync(password, user.password);
-    if (!ok) return res.status(401).json({ error: "Wrong password" });
+    const valid = bcrypt.compareSync(password, user.password);
+    if (!valid) return res.status(401).json({ error: "Wrong password" });
 
-    const token = jwt.sign({ id: user.id, role: user.role }, SECRET, {
-      expiresIn: "2h"
-    });
-
+    const token = jwt.sign({ id: user.id }, SECRET);
     res.json({ token });
   });
 });
@@ -78,7 +71,7 @@ function auth(req, res, next) {
   if (!token) return res.status(401).json({ error: "No token" });
 
   try {
-    req.user = jwt.verify(token, SECRET);
+    jwt.verify(token, SECRET);
     next();
   } catch {
     res.status(401).json({ error: "Invalid token" });
@@ -90,7 +83,7 @@ app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
   if (!name || !email || !number || !position) {
-    return res.status(400).json({ error: "Missing fields" });
+    return res.status(400).json({ error: "Fill all fields" });
   }
 
   db.run(
@@ -109,5 +102,5 @@ app.get("/applications", auth, (req, res) => {
 
 // START
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log("Server running on port " + PORT);
 });
