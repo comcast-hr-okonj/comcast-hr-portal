@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 export default function App() {
+  // ✅ FIXED: MUST use Render backend (NOT localhost)
   const API = "https://comcast-hr-portal.onrender.com";
 
   const [token, setToken] = useState("");
@@ -18,70 +19,94 @@ export default function App() {
     position: ""
   });
 
-  // SUBMIT
+  // 📝 SUBMIT APPLICATION
   const submit = async () => {
-    const res = await fetch(API + "/applications", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form)
-    });
+    try {
+      const res = await fetch(API + "/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.error);
-      return;
+      if (!res.ok) {
+        alert(data.error || "Submit failed");
+        return;
+      }
+
+      alert("Application submitted!");
+    } catch (err) {
+      console.log(err);
+      alert("Network error");
     }
-
-    alert("Submitted successfully!");
   };
 
-  // LOGIN
+  // 🔐 LOGIN
   const handleLogin = async () => {
-    const res = await fetch(API + "/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(login)
-    });
+    try {
+      const res = await fetch(API + "/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(login)
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.error);
-      return;
+      if (!res.ok) {
+        alert(data.error || "Login failed");
+        return;
+      }
+
+      setToken(data.token);
+      loadApps(data.token);
+
+    } catch (err) {
+      console.log(err);
+      alert("Network error");
     }
-
-    setToken(data.token);
-    loadApps(data.token);
   };
 
-  // LOAD
+  // 📊 LOAD APPLICATIONS
   const loadApps = async (tok) => {
-    const res = await fetch(API + "/applications", {
-      headers: { Authorization: tok }
-    });
+    try {
+      const res = await fetch(API + "/applications", {
+        headers: { Authorization: tok }
+      });
 
-    const data = await res.json();
-    setApps(data);
+      const data = await res.json();
+      setApps(data);
+
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  // PUBLIC UI
+  // 🌐 PUBLIC PAGE
   if (!token) {
     return (
       <div>
         <h2>Apply for Job</h2>
 
-        <input placeholder="Name"
-          onChange={e => setForm({ ...form, name: e.target.value })} />
+        <input
+          placeholder="Name"
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
 
-        <input placeholder="Email"
-          onChange={e => setForm({ ...form, email: e.target.value })} />
+        <input
+          placeholder="Email"
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+        />
 
-        <input placeholder="Phone"
-          onChange={e => setForm({ ...form, number: e.target.value })} />
+        <input
+          placeholder="Phone"
+          onChange={(e) => setForm({ ...form, number: e.target.value })}
+        />
 
-        <input placeholder="Position"
-          onChange={e => setForm({ ...form, position: e.target.value })} />
+        <input
+          placeholder="Position"
+          onChange={(e) => setForm({ ...form, position: e.target.value })}
+        />
 
         <button onClick={submit}>Submit</button>
 
@@ -89,19 +114,23 @@ export default function App() {
 
         <h3>Admin Login</h3>
 
-        <input placeholder="Email"
-          onChange={e => setLogin({ ...login, email: e.target.value })} />
+        <input
+          placeholder="Email"
+          onChange={(e) => setLogin({ ...login, email: e.target.value })}
+        />
 
-        <input type="password"
+        <input
+          type="password"
           placeholder="Password"
-          onChange={e => setLogin({ ...login, password: e.target.value })} />
+          onChange={(e) => setLogin({ ...login, password: e.target.value })}
+        />
 
         <button onClick={handleLogin}>Login</button>
       </div>
     );
   }
 
-  // ADMIN DASHBOARD
+  // 🔐 ADMIN DASHBOARD
   return (
     <div>
       <h2>Admin Dashboard</h2>
