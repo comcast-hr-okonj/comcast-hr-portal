@@ -6,13 +6,18 @@ const jwt = require("jsonwebtoken");
 
 const app = express();
 
-app.use(cors());
 app.use(express.json());
+
+// ✅ FIXED CORS (Vercel + Render)
+app.use(cors({
+  origin: "https://comcast-hr-portal.vercel.app",
+  methods: ["GET", "POST"],
+}));
 
 const SECRET = "comcast-hr-secret";
 const PORT = process.env.PORT || 3000;
 
-// DATABASE
+// DB
 const db = new sqlite3.Database("./database.sqlite");
 
 // TABLES
@@ -36,19 +41,17 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// CREATE ADMIN (AUTO FIX)
-db.serialize(() => {
-  const hash = bcrypt.hashSync("09015159496", 10);
+// ADMIN (auto create)
+const hash = bcrypt.hashSync("1234", 10);
 
-  db.run(
-    "INSERT OR IGNORE INTO users (email,password,role) VALUES (?,?,?)",
-    ["okonjortestimony2008@gmail.com", hash, "admin"]
-  );
-});
+db.run(
+  "INSERT OR IGNORE INTO users (email,password,role) VALUES (?,?,?)",
+  ["admin@comcast.com", hash, "admin"]
+);
 
-// HOME TEST
+// HOME
 app.get("/", (req, res) => {
-  res.json({ ok: true, message: "HR API running" });
+  res.json({ message: "HR API Running" });
 });
 
 // LOGIN
@@ -61,60 +64,47 @@ app.post("/login", (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ error: "Wrong password" });
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      SECRET,
-      { expiresIn: "2h" }
-    );
+    const token = jwt.sign({ id: user.id, role: user.role }, SECRET, {
+      expiresIn: "2h"
+    });
 
     res.json({ token });
   });
 });
 
-// AUTH MIDDLEWARE
+// AUTH
 function auth(req, res, next) {
   const token = req.headers.authorization;
 
-  if (!token) {
-    return res.status(401).json({ error: "No token" });
-  }
+  if (!token) return res.status(401).json({ error: "No token" });
 
   try {
-    const clean = token.replace("Bearer ", "");
-    req.user = jwt.verify(clean, SECRET);
+    req.user = jwt.verify(token, SECRET);
     next();
   } catch {
-    res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: "Invalid token" });
   }
 }
 
-// APPLY FORM
+// APPLY
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
-
-  if (!name || !email || !number || !position) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
 
   db.run(
     "INSERT INTO applications (name,email,number,position,status) VALUES (?,?,?,?,?)",
     [name, email, number, position, "Pending"],
-    (err) => {
-      if (err) return res.status(500).json({ error: "DB error" });
-
-      res.json({ success: true });
-    }
+    () => res.json({ success: true })
   );
 });
 
-// GET APPLICATIONS (ADMIN)
+// GET ALL (ADMIN)
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
   });
 });
 
-// START SERVER
+// START
 app.listen(PORT, () => {
-  console.log("🚀 HR Server running on port " + PORT);
+  console.log("Server running on port", PORT);
 });
