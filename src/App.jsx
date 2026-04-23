@@ -18,6 +18,17 @@ export default function App() {
     position: ""
   });
 
+  // HEADER
+  const Header = () => (
+    <div style={{
+      background: "#0b3d91",
+      color: "white",
+      padding: 15
+    }}>
+      <h2>Comcast HR Portal</h2>
+    </div>
+  );
+
   // LOGIN
   const handleLogin = async () => {
     const res = await fetch(API + "/login", {
@@ -33,15 +44,16 @@ export default function App() {
       return;
     }
 
-    setToken(data.token);
-    loadApps(data.token);
+    const bearer = "Bearer " + data.token;
+    setToken(bearer);
+    loadApps(bearer);
   };
 
-  // LOAD APPS
+  // LOAD APPLICATIONS
   const loadApps = async (tok) => {
     const res = await fetch(API + "/applications", {
       headers: {
-        Authorization: "Bearer " + tok
+        Authorization: tok
       }
     });
 
@@ -49,21 +61,29 @@ export default function App() {
     setApps(data);
   };
 
-  // SUBMIT APPLICATION
+  // SUBMIT FORM
   const submit = async () => {
-    await fetch(API + "/applications", {
+    const res = await fetch(API + "/applications", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form)
     });
 
-    alert("Application submitted!");
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("Application submitted!");
+    } else {
+      alert(data.error);
+    }
   };
 
   // PUBLIC PAGE
   if (!token) {
     return (
       <div>
+        <Header />
+
         <h2>Apply for Job</h2>
 
         <input placeholder="Name" onChange={e => setForm({ ...form, name: e.target.value })} />
@@ -85,12 +105,14 @@ export default function App() {
     );
   }
 
-  // ADMIN DASHBOARD
+  // DASHBOARD
   return (
     <div>
+      <Header />
+
       <h2>Admin Dashboard</h2>
 
-      {apps.map((a) => (
+      {apps.map(a => (
         <div key={a.id}>
           {a.name} - {a.position} - {a.status}
         </div>
