@@ -74,7 +74,7 @@ export default function App() {
     loadApps(token);
   };
 
-  // DELETE APPLICATION
+  // DELETE
   const remove = async (id) => {
     await fetch(`${API}/applications/${id}`, {
       method: "DELETE",
@@ -91,10 +91,16 @@ export default function App() {
     return (
       <div style={styles.page}>
 
-        <h1>Comcast HR Portal</h1>
-        <p>Enterprise Recruitment System</p>
+        <img
+          src="https://logos-world.net/wp-content/uploads/2020/12/Comcast-Logo.png"
+          style={{ width: 150 }}
+        />
+
+        <h2>Comcast HR Portal</h2>
+        <p>Enterprise SaaS Recruitment System</p>
 
         <div style={styles.card}>
+
           <h3>Apply for Job</h3>
 
           <input placeholder="Name" style={styles.input}
@@ -109,7 +115,7 @@ export default function App() {
           <input placeholder="Position" style={styles.input}
             onChange={(e) => setForm({ ...form, position: e.target.value })} />
 
-          <input placeholder="Address" style={styles.input}
+          <input placeholder="Address / Location" style={styles.input}
             onChange={(e) => setForm({ ...form, address: e.target.value })} />
 
           <button style={styles.btn} onClick={submit}>
@@ -121,10 +127,14 @@ export default function App() {
           <h3>Admin Login</h3>
 
           <input placeholder="Email" style={styles.input}
-            onChange={(e) => setLogin({ ...login, email: e.target.value })} />
+            onChange={(e) =>
+              setLogin({ ...login, email: e.target.value })
+            } />
 
           <input type="password" placeholder="Password" style={styles.input}
-            onChange={(e) => setLogin({ ...login, password: e.target.value })} />
+            onChange={(e) =>
+              setLogin({ ...login, password: e.target.value })
+            } />
 
           <button style={styles.loginBtn} onClick={handleLogin}>
             Login
@@ -140,7 +150,11 @@ export default function App() {
     <div style={styles.layout}>
 
       <div style={styles.sidebar}>
-        <h3>HR Admin</h3>
+        <img
+          src="https://logos-world.net/wp-content/uploads/2020/12/Comcast-Logo.png"
+          style={{ width: 120 }}
+        />
+
         <button onClick={logout} style={styles.logout}>
           Logout
         </button>
@@ -155,6 +169,7 @@ export default function App() {
             <div>
               <b>{a.name}</b>
               <div style={styles.small}>{a.email}</div>
+              <div style={styles.small}>📞 {a.number}</div>
             </div>
 
             <div>{a.position}</div>
