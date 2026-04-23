@@ -5,6 +5,7 @@ export default function App() {
 
   const [token, setToken] = useState("");
   const [apps, setApps] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const [login, setLogin] = useState({
     email: "",
@@ -18,8 +19,11 @@ export default function App() {
     position: ""
   });
 
-  // SUBMIT
+  // 🚀 SUBMIT APPLICATION
   const submit = async () => {
+    setLoading(true);
+    alert("Submitting application...");
+
     try {
       const res = await fetch(API + "/applications", {
         method: "POST",
@@ -27,21 +31,37 @@ export default function App() {
         body: JSON.stringify(form)
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      console.log("SUBMIT:", text);
 
       if (!res.ok) {
-        alert(data.error);
+        alert("❌ Submit failed: " + text);
+        setLoading(false);
         return;
       }
 
-      alert("Application submitted!");
-    } catch {
-      alert("Backend not reachable");
+      alert("✅ Application submitted successfully!");
+
+      setForm({
+        name: "",
+        email: "",
+        number: "",
+        position: ""
+      });
+
+    } catch (err) {
+      console.log(err);
+      alert("❌ Backend sleeping. Wait 10 seconds and try again.");
     }
+
+    setLoading(false);
   };
 
-  // LOGIN
+  // 🔐 LOGIN ADMIN
   const handleLogin = async () => {
+    setLoading(true);
+    alert("Logging in...");
+
     try {
       const res = await fetch(API + "/login", {
         method: "POST",
@@ -49,15 +69,20 @@ export default function App() {
         body: JSON.stringify(login)
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      console.log("LOGIN:", text);
 
       if (!res.ok) {
-        alert(data.error);
+        alert("❌ Login failed: " + text);
+        setLoading(false);
         return;
       }
 
+      const data = JSON.parse(text);
+
       setToken(data.token);
 
+      // LOAD APPLICATIONS
       const appsRes = await fetch(API + "/applications", {
         headers: { Authorization: data.token }
       });
@@ -65,58 +90,94 @@ export default function App() {
       const appsData = await appsRes.json();
       setApps(appsData);
 
-    } catch {
-      alert("Login failed");
+      alert("✅ Login successful!");
+
+    } catch (err) {
+      console.log(err);
+      alert("❌ Server sleeping. Try again in a few seconds.");
     }
+
+    setLoading(false);
   };
 
-  // PUBLIC PAGE
+  // 🌐 PUBLIC PAGE
   if (!token) {
     return (
-      <div>
+      <div style={{ padding: 20 }}>
         <h2>Comcast HR Portal</h2>
 
-        <h3>Apply</h3>
+        <h3>Apply for Job</h3>
 
-        <input placeholder="Name"
-          onChange={e => setForm({ ...form, name: e.target.value })} />
+        <input
+          placeholder="Name"
+          value={form.name}
+          onChange={e => setForm({ ...form, name: e.target.value })}
+        />
 
-        <input placeholder="Email"
-          onChange={e => setForm({ ...form, email: e.target.value })} />
+        <input
+          placeholder="Email"
+          value={form.email}
+          onChange={e => setForm({ ...form, email: e.target.value })}
+        />
 
-        <input placeholder="Phone"
-          onChange={e => setForm({ ...form, number: e.target.value })} />
+        <input
+          placeholder="Phone"
+          value={form.number}
+          onChange={e => setForm({ ...form, number: e.target.value })}
+        />
 
-        <input placeholder="Position"
-          onChange={e => setForm({ ...form, position: e.target.value })} />
+        <input
+          placeholder="Position"
+          value={form.position}
+          onChange={e => setForm({ ...form, position: e.target.value })}
+        />
 
-        <button onClick={submit}>Submit</button>
+        <br /><br />
+
+        <button onClick={submit} disabled={loading}>
+          {loading ? "Submitting..." : "Submit"}
+        </button>
 
         <hr />
 
         <h3>Admin Login</h3>
 
-        <input placeholder="Email"
-          onChange={e => setLogin({ ...login, email: e.target.value })} />
+        <input
+          placeholder="Email"
+          value={login.email}
+          onChange={e => setLogin({ ...login, email: e.target.value })}
+        />
 
-        <input type="password" placeholder="Password"
-          onChange={e => setLogin({ ...login, password: e.target.value })} />
+        <input
+          type="password"
+          placeholder="Password"
+          value={login.password}
+          onChange={e => setLogin({ ...login, password: e.target.value })}
+        />
 
-        <button onClick={handleLogin}>Login</button>
+        <br /><br />
+
+        <button onClick={handleLogin} disabled={loading}>
+          {loading ? "Logging in..." : "Login"}
+        </button>
       </div>
     );
   }
 
-  // DASHBOARD
+  // 📊 ADMIN DASHBOARD
   return (
-    <div>
+    <div style={{ padding: 20 }}>
       <h2>Admin Dashboard</h2>
 
-      {apps.map(a => (
-        <div key={a.id}>
-          {a.name} - {a.position} - {a.status}
-        </div>
-      ))}
+      {apps.length === 0 ? (
+        <p>No applications yet</p>
+      ) : (
+        apps.map(a => (
+          <div key={a.id} style={{ marginBottom: 10 }}>
+            <strong>{a.name}</strong> - {a.position} - {a.status}
+          </div>
+        ))
+      )}
     </div>
   );
 }
