@@ -16,13 +16,11 @@ export default function App() {
     position: ""
   });
 
-  // LOAD DATA
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("apps")) || [];
     setApps(saved);
   }, []);
 
-  // SUBMIT (NO BACKEND)
   const submit = () => {
     if (!form.name || !form.email || !form.number || !form.position) {
       alert("Fill all fields");
@@ -47,12 +45,8 @@ export default function App() {
     });
   };
 
-  // LOGIN (NO BACKEND)
   const handleLogin = () => {
-    if (
-      login.email === "admin@comcast.com" &&
-      login.password === "1234"
-    ) {
+    if (login.email === "admin@comcast.com" && login.password === "1234") {
       setToken("admin");
       alert("✅ Login successful!");
     } else {
@@ -60,13 +54,12 @@ export default function App() {
     }
   };
 
-  // PUBLIC PAGE
   if (!token) {
     return (
       <div style={{ padding: 20 }}>
         <h2>Comcast HR Portal</h2>
 
-        <h3>Apply for Job</h3>
+        <h3>Apply</h3>
 
         <input placeholder="Name"
           value={form.name}
@@ -105,7 +98,6 @@ export default function App() {
     );
   }
 
-  // ADMIN DASHBOARD
   return (
     <div style={{ padding: 20 }}>
       <h2>Admin Dashboard</h2>
