@@ -18,87 +18,65 @@ export default function App() {
     position: ""
   });
 
-  // Load applications after login
+  // LOAD APPLICATIONS
   const loadApps = async (authToken) => {
-    try {
-      const res = await fetch(`${API}/applications`, {
-        headers: {
-          Authorization: authToken
-        }
-      });
+    const res = await fetch(`${API}/applications`, {
+      headers: {
+        Authorization: `Bearer ${authToken}`
+      }
+    });
 
-      const data = await res.json();
-      setApps(data);
-    } catch (err) {
-      console.log("Error loading apps:", err);
-    }
+    const data = await res.json();
+    setApps(data);
   };
 
   useEffect(() => {
-    if (token) {
-      loadApps(token);
-    }
+    if (token) loadApps(token);
   }, [token]);
 
-  // SUBMIT APPLICATION (REAL BACKEND)
+  // APPLY
   const submit = async () => {
     if (!form.name || !form.email || !form.number || !form.position) {
       alert("Fill all fields");
       return;
     }
 
-    try {
-      const res = await fetch(`${API}/applications`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(form)
-      });
+    const res = await fetch(`${API}/applications`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(form)
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.success) {
-        alert("✅ Application submitted!");
-
-        setForm({
-          name: "",
-          email: "",
-          number: "",
-          position: ""
-        });
-      } else {
-        alert("❌ Submission failed");
-      }
-    } catch (err) {
-      console.log(err);
-      alert("❌ Server error");
+    if (data.success) {
+      alert("Application submitted!");
+      setForm({ name: "", email: "", number: "", position: "" });
+    } else {
+      alert("Failed to submit");
     }
   };
 
-  // LOGIN (REAL BACKEND)
+  // LOGIN
   const handleLogin = async () => {
-    try {
-      const res = await fetch(`${API}/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(login)
-      });
+    const res = await fetch(`${API}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(login)
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (data.token) {
-        setToken(data.token);
-        alert("✅ Login successful!");
-        loadApps(data.token);
-      } else {
-        alert("❌ Wrong credentials");
-      }
-    } catch (err) {
-      console.log(err);
-      alert("❌ Login failed");
+    if (data.token) {
+      setToken(data.token);
+      alert("Login successful!");
+      loadApps(data.token);
+    } else {
+      alert("Wrong credentials");
     }
   };
 
@@ -166,7 +144,7 @@ export default function App() {
     );
   }
 
-  // ADMIN DASHBOARD
+  // DASHBOARD
   return (
     <div style={{ padding: 20 }}>
       <h2>Admin Dashboard</h2>
@@ -175,7 +153,7 @@ export default function App() {
         <p>No applications yet</p>
       ) : (
         apps.map((a) => (
-          <div key={a.id} style={{ marginBottom: 10 }}>
+          <div key={a.id}>
             <b>{a.name}</b> - {a.email} - {a.position} - {a.status}
           </div>
         ))
