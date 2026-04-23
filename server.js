@@ -12,7 +12,7 @@ app.use(express.json());
 const SECRET = "comcast-hr-secret";
 const PORT = process.env.PORT || 3000;
 
-// DB
+// DATABASE
 const db = new sqlite3.Database("./database.sqlite");
 
 // TABLES
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// FORCE ADMIN (IMPORTANT FIX)
+// CREATE ADMIN (AUTO FIX)
 db.serialize(() => {
   const hash = bcrypt.hashSync("09015159496", 10);
 
@@ -46,7 +46,7 @@ db.serialize(() => {
   );
 });
 
-// HOME
+// HOME TEST
 app.get("/", (req, res) => {
   res.json({ ok: true, message: "HR API running" });
 });
@@ -71,7 +71,7 @@ app.post("/login", (req, res) => {
   });
 });
 
-// AUTH FIXED (NO BEARER CONFUSION)
+// AUTH MIDDLEWARE
 function auth(req, res, next) {
   const token = req.headers.authorization;
 
@@ -80,14 +80,15 @@ function auth(req, res, next) {
   }
 
   try {
-    req.user = jwt.verify(token, SECRET);
+    const clean = token.replace("Bearer ", "");
+    req.user = jwt.verify(clean, SECRET);
     next();
   } catch {
     res.status(401).json({ error: "Unauthorized" });
   }
 }
 
-// APPLY (PUBLIC)
+// APPLY FORM
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -98,18 +99,22 @@ app.post("/applications", (req, res) => {
   db.run(
     "INSERT INTO applications (name,email,number,position,status) VALUES (?,?,?,?,?)",
     [name, email, number, position, "Pending"],
-    () => res.json({ success: true })
+    (err) => {
+      if (err) return res.status(500).json({ error: "DB error" });
+
+      res.json({ success: true });
+    }
   );
 });
 
-// GET (ADMIN)
+// GET APPLICATIONS (ADMIN)
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
   });
 });
 
-// START
+// START SERVER
 app.listen(PORT, () => {
-  console.log("Server running on", PORT);
+  console.log("🚀 HR Server running on port " + PORT);
 });
