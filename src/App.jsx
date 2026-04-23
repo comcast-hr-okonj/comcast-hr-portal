@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 export default function App() {
-  // 🚨 IMPORTANT: UPDATED BACKEND (NEW RENDER SERVICE)
   const API = "https://comcast-hr-portal-1.onrender.com";
 
   const [token, setToken] = useState("");
@@ -19,7 +18,7 @@ export default function App() {
     position: ""
   });
 
-  // 📝 SUBMIT APPLICATION
+  // SUBMIT
   const submit = async () => {
     try {
       const res = await fetch(API + "/applications", {
@@ -30,29 +29,18 @@ export default function App() {
 
       const data = await res.json();
 
-      console.log("SUBMIT:", res.status, data);
-
       if (!res.ok) {
-        alert(data.error || "Submit failed");
+        alert(data.error);
         return;
       }
 
-      alert("Application submitted successfully!");
-
-      setForm({
-        name: "",
-        email: "",
-        number: "",
-        position: ""
-      });
-
-    } catch (err) {
-      console.log("SUBMIT ERROR:", err);
+      alert("Application submitted!");
+    } catch {
       alert("Backend not reachable");
     }
   };
 
-  // 🔐 LOGIN
+  // LOGIN
   const handleLogin = async () => {
     try {
       const res = await fetch(API + "/login", {
@@ -63,68 +51,44 @@ export default function App() {
 
       const data = await res.json();
 
-      console.log("LOGIN:", res.status, data);
-
       if (!res.ok) {
-        alert(data.error || "Login failed");
+        alert(data.error);
         return;
       }
 
       setToken(data.token);
-      loadApps(data.token);
 
-    } catch (err) {
-      console.log("LOGIN ERROR:", err);
-      alert("Backend not reachable");
-    }
-  };
-
-  // 📊 LOAD APPLICATIONS
-  const loadApps = async (tok) => {
-    try {
-      const res = await fetch(API + "/applications", {
-        headers: { Authorization: tok }
+      const appsRes = await fetch(API + "/applications", {
+        headers: { Authorization: data.token }
       });
 
-      const data = await res.json();
-      setApps(data);
+      const appsData = await appsRes.json();
+      setApps(appsData);
 
-    } catch (err) {
-      console.log("LOAD ERROR:", err);
+    } catch {
+      alert("Login failed");
     }
   };
 
-  // 🌐 PUBLIC UI
+  // PUBLIC PAGE
   if (!token) {
     return (
       <div>
         <h2>Comcast HR Portal</h2>
 
-        <h3>Apply for Job</h3>
+        <h3>Apply</h3>
 
-        <input
-          placeholder="Name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-        />
+        <input placeholder="Name"
+          onChange={e => setForm({ ...form, name: e.target.value })} />
 
-        <input
-          placeholder="Email"
-          value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-        />
+        <input placeholder="Email"
+          onChange={e => setForm({ ...form, email: e.target.value })} />
 
-        <input
-          placeholder="Phone"
-          value={form.number}
-          onChange={(e) => setForm({ ...form, number: e.target.value })}
-        />
+        <input placeholder="Phone"
+          onChange={e => setForm({ ...form, number: e.target.value })} />
 
-        <input
-          placeholder="Position"
-          value={form.position}
-          onChange={(e) => setForm({ ...form, position: e.target.value })}
-        />
+        <input placeholder="Position"
+          onChange={e => setForm({ ...form, position: e.target.value })} />
 
         <button onClick={submit}>Submit</button>
 
@@ -132,30 +96,23 @@ export default function App() {
 
         <h3>Admin Login</h3>
 
-        <input
-          placeholder="Email"
-          value={login.email}
-          onChange={(e) => setLogin({ ...login, email: e.target.value })}
-        />
+        <input placeholder="Email"
+          onChange={e => setLogin({ ...login, email: e.target.value })} />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={login.password}
-          onChange={(e) => setLogin({ ...login, password: e.target.value })}
-        />
+        <input type="password" placeholder="Password"
+          onChange={e => setLogin({ ...login, password: e.target.value })} />
 
         <button onClick={handleLogin}>Login</button>
       </div>
     );
   }
 
-  // 🔐 ADMIN DASHBOARD
+  // DASHBOARD
   return (
     <div>
       <h2>Admin Dashboard</h2>
 
-      {apps.map((a) => (
+      {apps.map(a => (
         <div key={a.id}>
           {a.name} - {a.position} - {a.status}
         </div>
