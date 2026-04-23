@@ -18,39 +18,11 @@ export default function App() {
     position: ""
   });
 
-  // LOAD APPLICATIONS (ADMIN)
-  const loadApps = async (authToken) => {
-    try {
-      const res = await fetch(`${API}/applications`, {
-        headers: {
-          Authorization: authToken
-        }
-      });
-
-      const data = await res.json();
-      setApps(data);
-    } catch (err) {
-      console.log("Load error:", err);
-    }
-  };
-
-  useEffect(() => {
-    if (token) loadApps(token);
-  }, [token]);
-
-  // SUBMIT APPLICATION
   const submit = async () => {
-    if (!form.name || !form.email || !form.number || !form.position) {
-      alert("Fill all fields");
-      return;
-    }
-
     try {
       const res = await fetch(`${API}/applications`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
       });
 
@@ -58,30 +30,20 @@ export default function App() {
 
       if (data.success) {
         alert("Application submitted!");
-
-        setForm({
-          name: "",
-          email: "",
-          number: "",
-          position: ""
-        });
+        setForm({ name: "", email: "", number: "", position: "" });
       } else {
         alert("Failed to submit");
       }
     } catch (err) {
-      console.log(err);
       alert("Server error");
     }
   };
 
-  // LOGIN
   const handleLogin = async () => {
     try {
       const res = await fetch(`${API}/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(login)
       });
 
@@ -89,18 +51,15 @@ export default function App() {
 
       if (data.token) {
         setToken(data.token);
-        loadApps(data.token);
         alert("Login successful!");
       } else {
         alert("Wrong credentials");
       }
     } catch (err) {
-      console.log(err);
       alert("Login failed");
     }
   };
 
-  // UI
   if (!token) {
     return (
       <div style={{ padding: 20 }}>
@@ -108,29 +67,25 @@ export default function App() {
 
         <h3>Apply for Job</h3>
 
-        <input
-          placeholder="Name"
+        <input placeholder="Name"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
         />
         <br />
 
-        <input
-          placeholder="Email"
+        <input placeholder="Email"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
         <br />
 
-        <input
-          placeholder="Phone"
+        <input placeholder="Phone"
           value={form.number}
           onChange={(e) => setForm({ ...form, number: e.target.value })}
         />
         <br />
 
-        <input
-          placeholder="Position"
+        <input placeholder="Position"
           value={form.position}
           onChange={(e) => setForm({ ...form, position: e.target.value })}
         />
@@ -142,16 +97,14 @@ export default function App() {
 
         <h3>Admin Login</h3>
 
-        <input
-          placeholder="Email"
+        <input placeholder="Email"
           onChange={(e) =>
             setLogin({ ...login, email: e.target.value })
           }
         />
         <br />
 
-        <input
-          type="password"
+        <input type="password"
           placeholder="Password"
           onChange={(e) =>
             setLogin({ ...login, password: e.target.value })
@@ -164,20 +117,10 @@ export default function App() {
     );
   }
 
-  // DASHBOARD
   return (
     <div style={{ padding: 20 }}>
       <h2>Admin Dashboard</h2>
-
-      {apps.length === 0 ? (
-        <p>No applications yet</p>
-      ) : (
-        apps.map((a) => (
-          <div key={a.id}>
-            {a.name} - {a.email} - {a.position} - {a.status}
-          </div>
-        ))
-      )}
+      <p>You are logged in.</p>
     </div>
   );
 }
