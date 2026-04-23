@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 export default function App() {
-  const API = "https://comcast-hr-backend.onrender.com";
+  const API = "https://comcast-hr-backend-1.onrender.com";
 
   const [token, setToken] = useState("");
   const [apps, setApps] = useState([]);
@@ -18,12 +18,12 @@ export default function App() {
     position: ""
   });
 
-  // LOAD APPLICATIONS
+  // LOAD APPLICATIONS (ADMIN)
   const loadApps = async (authToken) => {
     try {
       const res = await fetch(`${API}/applications`, {
         headers: {
-          Authorization: `Bearer ${authToken}`
+          Authorization: authToken
         }
       });
 
@@ -35,9 +35,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (token) {
-      loadApps(token);
-    }
+    if (token) loadApps(token);
   }, [token]);
 
   // SUBMIT APPLICATION
@@ -59,7 +57,7 @@ export default function App() {
       const data = await res.json();
 
       if (data.success) {
-        alert("✅ Application submitted!");
+        alert("Application submitted!");
 
         setForm({
           name: "",
@@ -68,7 +66,7 @@ export default function App() {
           position: ""
         });
       } else {
-        alert("❌ Failed to submit");
+        alert("Failed to submit");
       }
     } catch (err) {
       console.log(err);
@@ -91,8 +89,8 @@ export default function App() {
 
       if (data.token) {
         setToken(data.token);
-        alert("Login successful!");
         loadApps(data.token);
+        alert("Login successful!");
       } else {
         alert("Wrong credentials");
       }
@@ -102,7 +100,7 @@ export default function App() {
     }
   };
 
-  // UI (LOGIN PAGE)
+  // UI
   if (!token) {
     return (
       <div style={{ padding: 20 }}>
@@ -175,8 +173,8 @@ export default function App() {
         <p>No applications yet</p>
       ) : (
         apps.map((a) => (
-          <div key={a.id} style={{ marginBottom: 10 }}>
-            <b>{a.name}</b> - {a.email} - {a.position} - {a.status}
+          <div key={a.id}>
+            {a.name} - {a.email} - {a.position} - {a.status}
           </div>
         ))
       )}
