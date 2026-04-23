@@ -18,10 +18,8 @@ export default function App() {
     position: ""
   });
 
-  // ✅ SUBMIT (FIXED)
+  // SUBMIT
   const submit = async () => {
-    alert("Submitting...");
-
     const res = await fetch(API + "/applications", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,11 +29,11 @@ export default function App() {
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.error || "Submit failed");
+      alert(data.error);
       return;
     }
 
-    alert("Application submitted!");
+    alert("Submitted successfully!");
   };
 
   // LOGIN
@@ -49,7 +47,7 @@ export default function App() {
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.error || "Login failed");
+      alert(data.error);
       return;
     }
 
@@ -57,7 +55,7 @@ export default function App() {
     loadApps(data.token);
   };
 
-  // LOAD APPS
+  // LOAD
   const loadApps = async (tok) => {
     const res = await fetch(API + "/applications", {
       headers: { Authorization: tok }
@@ -67,7 +65,7 @@ export default function App() {
     setApps(data);
   };
 
-  // PUBLIC PAGE
+  // PUBLIC UI
   if (!token) {
     return (
       <div>
