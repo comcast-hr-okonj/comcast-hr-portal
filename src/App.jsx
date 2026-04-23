@@ -5,9 +5,12 @@ export default function App() {
 
   const [token, setToken] = useState("");
   const [apps, setApps] = useState([]);
-  const [view, setView] = useState("dashboard");
+  const [stats, setStats] = useState({});
 
-  const [login, setLogin] = useState({ email: "", password: "" });
+  const [login, setLogin] = useState({
+    email: "",
+    password: ""
+  });
 
   const [form, setForm] = useState({
     name: "",
@@ -16,19 +19,50 @@ export default function App() {
     position: ""
   });
 
-  const loadApps = async () => {
+  // LOAD DATA
+  const loadApps = async (t) => {
     const res = await fetch(`${API}/applications`, {
-      headers: { Authorization: token }
+      headers: { Authorization: t }
     });
+    setApps(await res.json());
+  };
 
-    const data = await res.json();
-    setApps(data);
+  const loadStats = async (t) => {
+    const res = await fetch(`${API}/stats`, {
+      headers: { Authorization: t }
+    });
+    setStats(await res.json());
   };
 
   useEffect(() => {
-    if (token) loadApps();
+    if (token) {
+      loadApps(token);
+      loadStats(token);
+
+      const interval = setInterval(() => {
+        loadApps(token);
+        loadStats(token);
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
   }, [token]);
 
+  // LOGIN
+  const handleLogin = async () => {
+    const res = await fetch(`${API}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(login)
+    });
+
+    const data = await res.json();
+
+    if (data.token) setToken(data.token);
+    else alert("Wrong credentials");
+  };
+
+  // SUBMIT APPLICATION
   const submit = async () => {
     await fetch(`${API}/applications`, {
       method: "POST",
@@ -39,24 +73,9 @@ export default function App() {
     alert("Application submitted");
   };
 
-  const handleLogin = async () => {
-    const res = await fetch(`${API}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(login)
-    });
-
-    const data = await res.json();
-
-    if (data.token) {
-      setToken(data.token);
-    } else {
-      alert("Wrong credentials");
-    }
-  };
-
+  // STATUS UPDATE
   const updateStatus = async (id, status) => {
-    await fetch(`${API}/applications/${id}`, {
+    await fetch(`${API}/applications/${id}/status`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -65,141 +84,135 @@ export default function App() {
       body: JSON.stringify({ status })
     });
 
-    loadApps();
+    loadApps(token);
+    loadStats(token);
   };
 
-  const removeApp = async (id) => {
+  // DELETE
+  const remove = async (id) => {
     await fetch(`${API}/applications/${id}`, {
       method: "DELETE",
       headers: { Authorization: token }
     });
 
-    loadApps();
+    loadApps(token);
   };
 
-  const logout = () => {
-    setToken("");
-  };
+  const logout = () => setToken("");
 
-  /* ---------------- LOGIN ---------------- */
+  /* ================= LOGIN PAGE ================= */
   if (!token) {
     return (
-      <div style={styles.loginPage}>
-        <div style={styles.loginCard}>
+      <div style={styles.loginWrap}>
+        <div style={styles.card}>
           <h2>Comcast HR Portal</h2>
-          <p>Enterprise Recruitment System</p>
+          <p>Enterprise SaaS System</p>
 
-          <h4>Apply for Job</h4>
-
-          <input style={styles.input} placeholder="Name"
+          <input placeholder="Name"
+            style={styles.input}
             onChange={(e) => setForm({ ...form, name: e.target.value })} />
 
-          <input style={styles.input} placeholder="Email"
+          <input placeholder="Email"
+            style={styles.input}
             onChange={(e) => setForm({ ...form, email: e.target.value })} />
 
-          <input style={styles.input} placeholder="Phone"
+          <input placeholder="Phone"
+            style={styles.input}
             onChange={(e) => setForm({ ...form, number: e.target.value })} />
 
-          <input style={styles.input} placeholder="Position"
+          <input placeholder="Position"
+            style={styles.input}
             onChange={(e) => setForm({ ...form, position: e.target.value })} />
 
-          <button style={styles.btn} onClick={submit}>Submit</button>
+          <button onClick={submit} style={styles.btn}>
+            Submit Application
+          </button>
 
           <hr />
 
-          <h4>Admin Login</h4>
-
-          <input style={styles.input} placeholder="Email"
+          <input placeholder="Admin Email"
+            style={styles.input}
             onChange={(e) => setLogin({ ...login, email: e.target.value })} />
 
-          <input style={styles.input} type="password" placeholder="Password"
+          <input type="password" placeholder="Password"
+            style={styles.input}
             onChange={(e) => setLogin({ ...login, password: e.target.value })} />
 
-          <button style={styles.btn} onClick={handleLogin}>Login</button>
+          <button onClick={handleLogin} style={styles.btnBlue}>
+            Login
+          </button>
         </div>
       </div>
     );
   }
 
-  /* ---------------- DASHBOARD ---------------- */
+  /* ================= DASHBOARD ================= */
   return (
     <div style={styles.layout}>
-      
-      {/* SIDEBAR */}
+
       <div style={styles.sidebar}>
-        <h3>Comcast HR</h3>
-
-        <button style={styles.navBtn} onClick={() => setView("dashboard")}>
-          Dashboard
-        </button>
-
-        <button style={styles.navBtn} onClick={() => setView("applications")}>
-          Applications
-        </button>
-
-        <button style={styles.logoutBtn} onClick={logout}>
-          Logout
-        </button>
+        <h3>HR SaaS</h3>
+        <button onClick={logout} style={styles.logout}>Logout</button>
       </div>
 
-      {/* MAIN */}
       <div style={styles.main}>
-        <h2>Admin Panel</h2>
 
-        {view === "dashboard" && (
-          <div style={styles.card}>
-            <h3>Overview</h3>
-            <p>Total Applications: {apps.length}</p>
+        {/* STATS */}
+        <div style={styles.stats}>
+          <div>Total {stats.total}</div>
+          <div>Pending {stats.pending}</div>
+          <div>Approved {stats.approved}</div>
+          <div>Rejected {stats.rejected}</div>
+        </div>
+
+        {/* TABLE */}
+        <div style={styles.table}>
+
+          <div style={styles.header}>
+            <div>Name</div>
+            <div>Email</div>
+            <div>Phone</div>
+            <div>Position</div>
+            <div>Status</div>
+            <div>Actions</div>
           </div>
-        )}
 
-        {view === "applications" && (
-          <div style={styles.table}>
-            <div style={styles.rowHeader}>
-              <div>Name</div>
-              <div>Email</div>
-              <div>Position</div>
-              <div>Status</div>
-              <div>Actions</div>
-            </div>
+          {apps.map((a) => (
+            <div key={a.id} style={styles.row}>
+              <div>{a.name}</div>
+              <div>{a.email}</div>
+              <div>{a.number}</div>
+              <div>{a.position}</div>
+              <div>{a.status}</div>
 
-            {apps.map((a) => (
-              <div key={a.id} style={styles.row}>
-                <div>{a.name}</div>
-                <div>{a.email}</div>
-                <div>{a.position}</div>
-                <div>{a.status}</div>
-
-                <div>
-                  <button onClick={() => updateStatus(a.id, "Approved")}>✔</button>
-                  <button onClick={() => updateStatus(a.id, "Rejected")}>✖</button>
-                  <button onClick={() => removeApp(a.id)}>🗑</button>
-                </div>
+              <div>
+                <button onClick={() => updateStatus(a.id, "Approved")}>✔</button>
+                <button onClick={() => updateStatus(a.id, "Rejected")}>✖</button>
+                <button onClick={() => remove(a.id)}>🗑</button>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+
+        </div>
       </div>
     </div>
   );
 }
 
-/* ---------------- STYLES ---------------- */
+/* ================= STYLES ================= */
 const styles = {
-  loginPage: {
+  loginWrap: {
     height: "100vh",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "#0b2e6b",
-    fontFamily: "Arial"
+    background: "#0b2e6b"
   },
 
-  loginCard: {
+  card: {
     background: "white",
-    padding: 25,
-    width: 360,
-    borderRadius: 10
+    padding: 20,
+    width: 380
   },
 
   input: {
@@ -210,11 +223,15 @@ const styles = {
 
   btn: {
     width: "100%",
+    padding: 10
+  },
+
+  btnBlue: {
+    width: "100%",
     padding: 10,
     background: "#0078d7",
     color: "white",
-    border: "none",
-    marginTop: 10
+    border: "none"
   },
 
   layout: {
@@ -223,60 +240,48 @@ const styles = {
   },
 
   sidebar: {
-    width: 220,
-    height: "100vh",
+    width: 200,
     background: "#0b2e6b",
     color: "white",
+    height: "100vh",
     padding: 20
   },
 
-  navBtn: {
-    width: "100%",
-    padding: 10,
-    marginTop: 10,
-    background: "transparent",
-    color: "white",
-    border: "1px solid white"
-  },
-
-  logoutBtn: {
-    width: "100%",
-    padding: 10,
-    marginTop: 30,
+  logout: {
+    marginTop: 20,
     background: "red",
     color: "white",
-    border: "none"
+    border: "none",
+    padding: 10
   },
 
   main: {
     flex: 1,
     padding: 20,
-    background: "#f4f6f8"
+    background: "#f4f6fb"
   },
 
-  card: {
-    background: "white",
-    padding: 20,
-    borderRadius: 10
+  stats: {
+    display: "flex",
+    gap: 10,
+    marginBottom: 20
   },
 
   table: {
     background: "white",
-    padding: 10,
-    borderRadius: 10
+    padding: 10
   },
 
-  rowHeader: {
+  header: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr",
     fontWeight: "bold",
-    padding: 10,
     borderBottom: "2px solid #ddd"
   },
 
   row: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr",
     padding: 10,
     borderBottom: "1px solid #eee"
   }
