@@ -1,23 +1,21 @@
 const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
+const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const app = express();
 
-app.use(express.json());
-
-// ✅ FIX CORS (Vercel allowed)
 app.use(cors({
-  origin: "https://comcast-hr-portal.vercel.app",
-  methods: ["GET", "POST"]
+  origin: "*"
 }));
+
+app.use(express.json());
 
 const SECRET = "comcast-hr-secret";
 const PORT = process.env.PORT || 3000;
 
-// DATABASE
+// DB
 const db = new sqlite3.Database("./database.sqlite");
 
 // TABLES
@@ -42,7 +40,7 @@ db.serialize(() => {
     )
   `);
 
-  // DEFAULT ADMIN
+  // ADMIN (RESET SAFE)
   const hash = bcrypt.hashSync("1234", 10);
 
   db.run(
@@ -51,7 +49,7 @@ db.serialize(() => {
   );
 });
 
-// HOME
+// TEST ROUTE
 app.get("/", (req, res) => {
   res.json({ message: "HR API Running" });
 });
@@ -77,18 +75,17 @@ app.post("/login", (req, res) => {
 // AUTH
 function auth(req, res, next) {
   const token = req.headers.authorization;
-
   if (!token) return res.status(401).json({ error: "No token" });
 
   try {
     req.user = jwt.verify(token, SECRET);
     next();
   } catch {
-    res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: "Invalid token" });
   }
 }
 
-// APPLY
+// SUBMIT APPLICATION
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -110,7 +107,7 @@ app.get("/applications", auth, (req, res) => {
   });
 });
 
-// START SERVER
+// START
 app.listen(PORT, () => {
-  console.log("Server running on", PORT);
+  console.log("Server running on port", PORT);
 });
