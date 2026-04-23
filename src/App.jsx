@@ -29,7 +29,7 @@ export default function App() {
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.error);
+      alert(data.error || "Login failed");
       return;
     }
 
@@ -47,7 +47,7 @@ export default function App() {
     setApps(data);
   };
 
-  // SUBMIT FORM
+  // SUBMIT
   const submit = async () => {
     const res = await fetch(API + "/applications", {
       method: "POST",
@@ -58,7 +58,7 @@ export default function App() {
     const data = await res.json();
 
     if (!res.ok) {
-      alert(data.error);
+      alert(data.error || "Submit failed");
       return;
     }
 
@@ -87,7 +87,7 @@ export default function App() {
 
         <hr />
 
-        <h2>Admin Login</h2>
+        <h3>Admin Login</h3>
 
         <input placeholder="Email"
           onChange={e => setLogin({ ...login, email: e.target.value })} />
