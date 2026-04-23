@@ -37,7 +37,7 @@ export default function App() {
     loadApps(data.token);
   };
 
-  // LOAD APPS
+  // LOAD APPLICATIONS
   const loadApps = async (tok) => {
     const res = await fetch(API + "/applications", {
       headers: { Authorization: tok }
@@ -47,7 +47,7 @@ export default function App() {
     setApps(data);
   };
 
-  // SUBMIT
+  // SUBMIT APPLICATION
   const submit = async () => {
     const res = await fetch(API + "/applications", {
       method: "POST",
@@ -65,7 +65,7 @@ export default function App() {
     alert("Application submitted!");
   };
 
-  // LOGIN PAGE
+  // PUBLIC PAGE
   if (!token) {
     return (
       <div>
@@ -101,7 +101,7 @@ export default function App() {
     );
   }
 
-  // DASHBOARD
+  // ADMIN DASHBOARD
   return (
     <div>
       <h2>Admin Dashboard</h2>
