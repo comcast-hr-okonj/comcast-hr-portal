@@ -1,11 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function App() {
-  const API = "https://comcast-hr-portal-1.onrender.com";
-
   const [token, setToken] = useState("");
   const [apps, setApps] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   const [login, setLogin] = useState({
     email: "",
@@ -19,88 +16,51 @@ export default function App() {
     position: ""
   });
 
-  // 🚀 SUBMIT APPLICATION
-  const submit = async () => {
-    setLoading(true);
-    alert("Submitting application...");
+  // LOAD SAVED APPLICATIONS
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem("applications")) || [];
+    setApps(saved);
+  }, []);
 
-    try {
-      const res = await fetch(API + "/applications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
-      });
-
-      const text = await res.text();
-      console.log("SUBMIT:", text);
-
-      if (!res.ok) {
-        alert("❌ Submit failed: " + text);
-        setLoading(false);
-        return;
-      }
-
-      alert("✅ Application submitted successfully!");
-
-      setForm({
-        name: "",
-        email: "",
-        number: "",
-        position: ""
-      });
-
-    } catch (err) {
-      console.log(err);
-      alert("❌ Backend sleeping. Wait 10 seconds and try again.");
+  // SAVE APPLICATION
+  const submit = () => {
+    if (!form.name || !form.email || !form.number || !form.position) {
+      alert("Fill all fields");
+      return;
     }
 
-    setLoading(false);
+    const newApps = [
+      { ...form, id: Date.now(), status: "Pending" },
+      ...apps
+    ];
+
+    localStorage.setItem("applications", JSON.stringify(newApps));
+    setApps(newApps);
+
+    alert("✅ Application submitted!");
+
+    setForm({
+      name: "",
+      email: "",
+      number: "",
+      position: ""
+    });
   };
 
-  // 🔐 LOGIN ADMIN
-  const handleLogin = async () => {
-    setLoading(true);
-    alert("Logging in...");
-
-    try {
-      const res = await fetch(API + "/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(login)
-      });
-
-      const text = await res.text();
-      console.log("LOGIN:", text);
-
-      if (!res.ok) {
-        alert("❌ Login failed: " + text);
-        setLoading(false);
-        return;
-      }
-
-      const data = JSON.parse(text);
-
-      setToken(data.token);
-
-      // LOAD APPLICATIONS
-      const appsRes = await fetch(API + "/applications", {
-        headers: { Authorization: data.token }
-      });
-
-      const appsData = await appsRes.json();
-      setApps(appsData);
-
+  // LOGIN (NO BACKEND)
+  const handleLogin = () => {
+    if (
+      login.email === "admin@comcast.com" &&
+      login.password === "1234"
+    ) {
+      setToken("admin");
       alert("✅ Login successful!");
-
-    } catch (err) {
-      console.log(err);
-      alert("❌ Server sleeping. Try again in a few seconds.");
+    } else {
+      alert("❌ Wrong login details");
     }
-
-    setLoading(false);
   };
 
-  // 🌐 PUBLIC PAGE
+  // PUBLIC PAGE
   if (!token) {
     return (
       <div style={{ padding: 20 }}>
@@ -108,63 +68,44 @@ export default function App() {
 
         <h3>Apply for Job</h3>
 
-        <input
-          placeholder="Name"
+        <input placeholder="Name"
           value={form.name}
-          onChange={e => setForm({ ...form, name: e.target.value })}
-        />
+          onChange={e => setForm({ ...form, name: e.target.value })} />
 
-        <input
-          placeholder="Email"
+        <input placeholder="Email"
           value={form.email}
-          onChange={e => setForm({ ...form, email: e.target.value })}
-        />
+          onChange={e => setForm({ ...form, email: e.target.value })} />
 
-        <input
-          placeholder="Phone"
+        <input placeholder="Phone"
           value={form.number}
-          onChange={e => setForm({ ...form, number: e.target.value })}
-        />
+          onChange={e => setForm({ ...form, number: e.target.value })} />
 
-        <input
-          placeholder="Position"
+        <input placeholder="Position"
           value={form.position}
-          onChange={e => setForm({ ...form, position: e.target.value })}
-        />
+          onChange={e => setForm({ ...form, position: e.target.value })} />
 
         <br /><br />
 
-        <button onClick={submit} disabled={loading}>
-          {loading ? "Submitting..." : "Submit"}
-        </button>
+        <button onClick={submit}>Submit</button>
 
         <hr />
 
         <h3>Admin Login</h3>
 
-        <input
-          placeholder="Email"
-          value={login.email}
-          onChange={e => setLogin({ ...login, email: e.target.value })}
-        />
+        <input placeholder="Email"
+          onChange={e => setLogin({ ...login, email: e.target.value })} />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={login.password}
-          onChange={e => setLogin({ ...login, password: e.target.value })}
-        />
+        <input type="password" placeholder="Password"
+          onChange={e => setLogin({ ...login, password: e.target.value })} />
 
         <br /><br />
 
-        <button onClick={handleLogin} disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </button>
+        <button onClick={handleLogin}>Login</button>
       </div>
     );
   }
 
-  // 📊 ADMIN DASHBOARD
+  // DASHBOARD
   return (
     <div style={{ padding: 20 }}>
       <h2>Admin Dashboard</h2>
