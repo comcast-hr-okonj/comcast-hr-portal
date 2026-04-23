@@ -16,13 +16,13 @@ export default function App() {
     position: ""
   });
 
-  // LOAD SAVED APPLICATIONS
+  // LOAD DATA
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("applications")) || [];
+    const saved = JSON.parse(localStorage.getItem("apps")) || [];
     setApps(saved);
   }, []);
 
-  // SAVE APPLICATION
+  // SUBMIT (NO BACKEND)
   const submit = () => {
     if (!form.name || !form.email || !form.number || !form.position) {
       alert("Fill all fields");
@@ -34,7 +34,7 @@ export default function App() {
       ...apps
     ];
 
-    localStorage.setItem("applications", JSON.stringify(newApps));
+    localStorage.setItem("apps", JSON.stringify(newApps));
     setApps(newApps);
 
     alert("✅ Application submitted!");
@@ -56,7 +56,7 @@ export default function App() {
       setToken("admin");
       alert("✅ Login successful!");
     } else {
-      alert("❌ Wrong login details");
+      alert("❌ Wrong credentials");
     }
   };
 
@@ -105,7 +105,7 @@ export default function App() {
     );
   }
 
-  // DASHBOARD
+  // ADMIN DASHBOARD
   return (
     <div style={{ padding: 20 }}>
       <h2>Admin Dashboard</h2>
@@ -114,8 +114,8 @@ export default function App() {
         <p>No applications yet</p>
       ) : (
         apps.map(a => (
-          <div key={a.id} style={{ marginBottom: 10 }}>
-            <strong>{a.name}</strong> - {a.position} - {a.status}
+          <div key={a.id}>
+            {a.name} - {a.position} - {a.status}
           </div>
         ))
       )}
