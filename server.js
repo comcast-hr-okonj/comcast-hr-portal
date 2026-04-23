@@ -8,48 +8,50 @@ const app = express();
 
 app.use(express.json());
 
-// ✅ FIXED CORS (Vercel + Render)
+// ✅ CORS FIX (Vercel frontend allowed)
 app.use(cors({
   origin: "https://comcast-hr-portal.vercel.app",
-  methods: ["GET", "POST"],
+  methods: ["GET", "POST"]
 }));
 
 const SECRET = "comcast-hr-secret";
 const PORT = process.env.PORT || 3000;
 
-// DB
+// DATABASE
 const db = new sqlite3.Database("./database.sqlite");
 
 // TABLES
-db.run(`
-CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT UNIQUE,
-  password TEXT,
-  role TEXT
-)
-`);
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE,
+      password TEXT,
+      role TEXT
+    )
+  `);
 
-db.run(`
-CREATE TABLE IF NOT EXISTS applications (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT,
-  email TEXT,
-  number TEXT,
-  position TEXT,
-  status TEXT
-)
-`);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS applications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      email TEXT,
+      number TEXT,
+      position TEXT,
+      status TEXT
+    )
+  `);
 
-// ADMIN (auto create)
-const hash = bcrypt.hashSync("1234", 10);
+  // ADMIN USER (default login)
+  const hash = bcrypt.hashSync("1234", 10);
 
-db.run(
-  "INSERT OR IGNORE INTO users (email,password,role) VALUES (?,?,?)",
-  ["admin@comcast.com", hash, "admin"]
-);
+  db.run(
+    "INSERT OR IGNORE INTO users (email,password,role) VALUES (?,?,?)",
+    ["admin@comcast.com", hash, "admin"]
+  );
+});
 
-// HOME
+// HOME ROUTE
 app.get("/", (req, res) => {
   res.json({ message: "HR API Running" });
 });
@@ -58,21 +60,23 @@ app.get("/", (req, res) => {
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  db.get("SELECT * FROM users WHERE email=?", [email], async (err, user) => {
+  db.get("SELECT * FROM users WHERE email=?", [email], (err, user) => {
     if (!user) return res.status(401).json({ error: "User not found" });
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ error: "Wrong password" });
+    const ok = bcrypt.compareSync(password, user.password);
+    if (!ok) return res.status(401).json({ error: "Wrong password" });
 
-    const token = jwt.sign({ id: user.id, role: user.role }, SECRET, {
-      expiresIn: "2h"
-    });
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      SECRET,
+      { expiresIn: "2h" }
+    );
 
     res.json({ token });
   });
 });
 
-// AUTH
+// AUTH MIDDLEWARE
 function auth(req, res, next) {
   const token = req.headers.authorization;
 
@@ -82,13 +86,17 @@ function auth(req, res, next) {
     req.user = jwt.verify(token, SECRET);
     next();
   } catch {
-    res.status(401).json({ error: "Invalid token" });
+    res.status(401).json({ error: "Unauthorized" });
   }
 }
 
-// APPLY
+// APPLY FORM (PUBLIC)
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
+
+  if (!name || !email || !number || !position) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
 
   db.run(
     "INSERT INTO applications (name,email,number,position,status) VALUES (?,?,?,?,?)",
@@ -97,14 +105,14 @@ app.post("/applications", (req, res) => {
   );
 });
 
-// GET ALL (ADMIN)
+// GET APPLICATIONS (ADMIN ONLY)
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
   });
 });
 
-// START
+// START SERVER
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
