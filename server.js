@@ -12,7 +12,7 @@ app.use(express.json());
 const SECRET = "comcast-hr-secret";
 const PORT = process.env.PORT || 3000;
 
-// DATABASE
+// DB
 const db = new sqlite3.Database("./database.sqlite");
 
 // TABLES
@@ -36,21 +36,19 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// ADMIN AUTO CREATE
-const createAdmin = async () => {
-  const hash = await bcrypt.hash("09015159496", 10);
+// FORCE ADMIN (IMPORTANT FIX)
+db.serialize(() => {
+  const hash = bcrypt.hashSync("09015159496", 10);
 
   db.run(
     "INSERT OR IGNORE INTO users (email,password,role) VALUES (?,?,?)",
     ["okonjortestimony2008@gmail.com", hash, "admin"]
   );
-};
+});
 
-createAdmin();
-
-// ROOT (fix Cannot GET /)
+// HOME
 app.get("/", (req, res) => {
-  res.json({ message: "Comcast HR System Running" });
+  res.json({ ok: true, message: "HR API running" });
 });
 
 // LOGIN
@@ -58,10 +56,10 @@ app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
   db.get("SELECT * FROM users WHERE email=?", [email], async (err, user) => {
-    if (!user) return res.status(401).json({ error: "Invalid email" });
+    if (!user) return res.status(401).json({ error: "User not found" });
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ error: "Invalid password" });
+    if (!match) return res.status(401).json({ error: "Wrong password" });
 
     const token = jwt.sign(
       { id: user.id, role: user.role },
@@ -73,13 +71,13 @@ app.post("/login", (req, res) => {
   });
 });
 
-// AUTH
+// AUTH FIXED (NO BEARER CONFUSION)
 function auth(req, res, next) {
-  const header = req.headers.authorization;
+  const token = req.headers.authorization;
 
-  if (!header) return res.status(401).json({ error: "No token" });
-
-  const token = header.replace("Bearer ", "");
+  if (!token) {
+    return res.status(401).json({ error: "No token" });
+  }
 
   try {
     req.user = jwt.verify(token, SECRET);
@@ -89,7 +87,7 @@ function auth(req, res, next) {
   }
 }
 
-// SUBMIT APPLICATION (PUBLIC)
+// APPLY (PUBLIC)
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -104,14 +102,14 @@ app.post("/applications", (req, res) => {
   );
 });
 
-// GET APPLICATIONS (ADMIN ONLY)
+// GET (ADMIN)
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
   });
 });
 
-// START SERVER
+// START
 app.listen(PORT, () => {
-  console.log("HR Server running on port " + PORT);
+  console.log("Server running on", PORT);
 });
