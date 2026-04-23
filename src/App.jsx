@@ -1,7 +1,8 @@
 import { useState } from "react";
 
 export default function App() {
-  const API = "https://comcast-hr-portal.onrender.com";
+  // 🚨 IMPORTANT: UPDATED BACKEND (NEW RENDER SERVICE)
+  const API = "https://comcast-hr-portal-1.onrender.com";
 
   const [token, setToken] = useState("");
   const [apps, setApps] = useState([]);
@@ -18,9 +19,37 @@ export default function App() {
     position: ""
   });
 
-  // 🧪 TEST BUTTON (you requested this)
-  const submit = () => {
-    alert("BUTTON CLICKED");
+  // 📝 SUBMIT APPLICATION
+  const submit = async () => {
+    try {
+      const res = await fetch(API + "/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form)
+      });
+
+      const data = await res.json();
+
+      console.log("SUBMIT:", res.status, data);
+
+      if (!res.ok) {
+        alert(data.error || "Submit failed");
+        return;
+      }
+
+      alert("Application submitted successfully!");
+
+      setForm({
+        name: "",
+        email: "",
+        number: "",
+        position: ""
+      });
+
+    } catch (err) {
+      console.log("SUBMIT ERROR:", err);
+      alert("Backend not reachable");
+    }
   };
 
   // 🔐 LOGIN
@@ -45,7 +74,7 @@ export default function App() {
       loadApps(data.token);
 
     } catch (err) {
-      console.log(err);
+      console.log("LOGIN ERROR:", err);
       alert("Backend not reachable");
     }
   };
@@ -61,7 +90,7 @@ export default function App() {
       setApps(data);
 
     } catch (err) {
-      console.log(err);
+      console.log("LOAD ERROR:", err);
     }
   };
 
@@ -69,29 +98,34 @@ export default function App() {
   if (!token) {
     return (
       <div>
-        <h2>Apply for Job</h2>
+        <h2>Comcast HR Portal</h2>
+
+        <h3>Apply for Job</h3>
 
         <input
           placeholder="Name"
+          value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
         />
 
         <input
           placeholder="Email"
+          value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
         />
 
         <input
           placeholder="Phone"
+          value={form.number}
           onChange={(e) => setForm({ ...form, number: e.target.value })}
         />
 
         <input
           placeholder="Position"
+          value={form.position}
           onChange={(e) => setForm({ ...form, position: e.target.value })}
         />
 
-        {/* 🧪 TEST BUTTON */}
         <button onClick={submit}>Submit</button>
 
         <hr />
@@ -100,12 +134,14 @@ export default function App() {
 
         <input
           placeholder="Email"
+          value={login.email}
           onChange={(e) => setLogin({ ...login, email: e.target.value })}
         />
 
         <input
           type="password"
           placeholder="Password"
+          value={login.password}
           onChange={(e) => setLogin({ ...login, password: e.target.value })}
         />
 
