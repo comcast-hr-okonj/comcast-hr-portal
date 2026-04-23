@@ -8,7 +8,7 @@ const app = express();
 
 app.use(express.json());
 
-// ✅ CORS FIX (Vercel frontend allowed)
+// ✅ FIX CORS (Vercel allowed)
 app.use(cors({
   origin: "https://comcast-hr-portal.vercel.app",
   methods: ["GET", "POST"]
@@ -42,7 +42,7 @@ db.serialize(() => {
     )
   `);
 
-  // ADMIN USER (default login)
+  // DEFAULT ADMIN
   const hash = bcrypt.hashSync("1234", 10);
 
   db.run(
@@ -51,7 +51,7 @@ db.serialize(() => {
   );
 });
 
-// HOME ROUTE
+// HOME
 app.get("/", (req, res) => {
   res.json({ message: "HR API Running" });
 });
@@ -66,17 +66,15 @@ app.post("/login", (req, res) => {
     const ok = bcrypt.compareSync(password, user.password);
     if (!ok) return res.status(401).json({ error: "Wrong password" });
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      SECRET,
-      { expiresIn: "2h" }
-    );
+    const token = jwt.sign({ id: user.id, role: user.role }, SECRET, {
+      expiresIn: "2h"
+    });
 
     res.json({ token });
   });
 });
 
-// AUTH MIDDLEWARE
+// AUTH
 function auth(req, res, next) {
   const token = req.headers.authorization;
 
@@ -90,7 +88,7 @@ function auth(req, res, next) {
   }
 }
 
-// APPLY FORM (PUBLIC)
+// APPLY
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
 
@@ -105,7 +103,7 @@ app.post("/applications", (req, res) => {
   );
 });
 
-// GET APPLICATIONS (ADMIN ONLY)
+// GET APPLICATIONS
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
@@ -114,5 +112,5 @@ app.get("/applications", auth, (req, res) => {
 
 // START SERVER
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log("Server running on", PORT);
 });
