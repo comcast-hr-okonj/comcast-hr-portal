@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS applications (
 )
 `);
 
-// ADMIN
+// ADMIN AUTO CREATE
 const createAdmin = async () => {
   const hash = await bcrypt.hash("09015159496", 10);
 
@@ -48,9 +48,9 @@ const createAdmin = async () => {
 
 createAdmin();
 
-// HOME ROUTE (fixes Cannot GET /)
+// ROOT (fix Cannot GET /)
 app.get("/", (req, res) => {
-  res.send("🚀 Comcast HR System Running");
+  res.json({ message: "Comcast HR System Running" });
 });
 
 // LOGIN
@@ -73,13 +73,13 @@ app.post("/login", (req, res) => {
   });
 });
 
-// AUTH MIDDLEWARE
+// AUTH
 function auth(req, res, next) {
   const header = req.headers.authorization;
 
   if (!header) return res.status(401).json({ error: "No token" });
 
-  const token = header.split(" ")[1];
+  const token = header.replace("Bearer ", "");
 
   try {
     req.user = jwt.verify(token, SECRET);
@@ -89,9 +89,13 @@ function auth(req, res, next) {
   }
 }
 
-// APPLY JOB (PUBLIC)
+// SUBMIT APPLICATION (PUBLIC)
 app.post("/applications", (req, res) => {
   const { name, email, number, position } = req.body;
+
+  if (!name || !email || !number || !position) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
 
   db.run(
     "INSERT INTO applications (name,email,number,position,status) VALUES (?,?,?,?,?)",
@@ -100,13 +104,14 @@ app.post("/applications", (req, res) => {
   );
 });
 
-// GET APPLICATIONS (ADMIN)
+// GET APPLICATIONS (ADMIN ONLY)
 app.get("/applications", auth, (req, res) => {
   db.all("SELECT * FROM applications ORDER BY id DESC", (err, rows) => {
     res.json(rows);
   });
 });
 
+// START SERVER
 app.listen(PORT, () => {
-  console.log("🚀 Server running on port " + PORT);
+  console.log("HR Server running on port " + PORT);
 });
