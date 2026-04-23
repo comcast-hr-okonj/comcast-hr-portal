@@ -5,11 +5,9 @@ export default function App() {
 
   const [token, setToken] = useState("");
   const [apps, setApps] = useState([]);
+  const [view, setView] = useState("dashboard");
 
-  const [login, setLogin] = useState({
-    email: "",
-    password: ""
-  });
+  const [login, setLogin] = useState({ email: "", password: "" });
 
   const [form, setForm] = useState({
     name: "",
@@ -18,7 +16,6 @@ export default function App() {
     position: ""
   });
 
-  // LOAD DATA
   const loadApps = async () => {
     const res = await fetch(`${API}/applications`, {
       headers: { Authorization: token }
@@ -32,7 +29,6 @@ export default function App() {
     if (token) loadApps();
   }, [token]);
 
-  // APPLY
   const submit = async () => {
     await fetch(`${API}/applications`, {
       method: "POST",
@@ -40,10 +36,9 @@ export default function App() {
       body: JSON.stringify(form)
     });
 
-    alert("Submitted!");
+    alert("Application submitted");
   };
 
-  // LOGIN
   const handleLogin = async () => {
     const res = await fetch(`${API}/login`, {
       method: "POST",
@@ -60,7 +55,6 @@ export default function App() {
     }
   };
 
-  // APPROVE / REJECT
   const updateStatus = async (id, status) => {
     await fetch(`${API}/applications/${id}`, {
       method: "PUT",
@@ -74,7 +68,6 @@ export default function App() {
     loadApps();
   };
 
-  // DELETE
   const removeApp = async (id) => {
     await fetch(`${API}/applications/${id}`, {
       method: "DELETE",
@@ -84,43 +77,42 @@ export default function App() {
     loadApps();
   };
 
-  // LOGOUT
   const logout = () => {
     setToken("");
   };
 
-  /* ---------------- LOGIN UI ---------------- */
+  /* ---------------- LOGIN ---------------- */
   if (!token) {
     return (
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <h1>Comcast HR Portal</h1>
+      <div style={styles.loginPage}>
+        <div style={styles.loginCard}>
+          <h2>Comcast HR Portal</h2>
           <p>Enterprise Recruitment System</p>
 
-          <h3>Apply for Job</h3>
+          <h4>Apply for Job</h4>
 
-          <input placeholder="Name" style={styles.input}
+          <input style={styles.input} placeholder="Name"
             onChange={(e) => setForm({ ...form, name: e.target.value })} />
 
-          <input placeholder="Email" style={styles.input}
+          <input style={styles.input} placeholder="Email"
             onChange={(e) => setForm({ ...form, email: e.target.value })} />
 
-          <input placeholder="Phone" style={styles.input}
+          <input style={styles.input} placeholder="Phone"
             onChange={(e) => setForm({ ...form, number: e.target.value })} />
 
-          <input placeholder="Position" style={styles.input}
+          <input style={styles.input} placeholder="Position"
             onChange={(e) => setForm({ ...form, position: e.target.value })} />
 
           <button style={styles.btn} onClick={submit}>Submit</button>
 
           <hr />
 
-          <h3>Admin Login</h3>
+          <h4>Admin Login</h4>
 
-          <input placeholder="Email" style={styles.input}
+          <input style={styles.input} placeholder="Email"
             onChange={(e) => setLogin({ ...login, email: e.target.value })} />
 
-          <input type="password" placeholder="Password" style={styles.input}
+          <input style={styles.input} type="password" placeholder="Password"
             onChange={(e) => setLogin({ ...login, password: e.target.value })} />
 
           <button style={styles.btn} onClick={handleLogin}>Login</button>
@@ -131,77 +123,161 @@ export default function App() {
 
   /* ---------------- DASHBOARD ---------------- */
   return (
-    <div style={styles.page}>
-      <div style={styles.cardFull}>
-        <h2>Admin Dashboard</h2>
+    <div style={styles.layout}>
+      
+      {/* SIDEBAR */}
+      <div style={styles.sidebar}>
+        <h3>Comcast HR</h3>
 
-        <button style={styles.logout} onClick={logout}>Logout</button>
+        <button style={styles.navBtn} onClick={() => setView("dashboard")}>
+          Dashboard
+        </button>
 
-        <div style={styles.table}>
-          {apps.map((a) => (
-            <div key={a.id} style={styles.row}>
-              <div>{a.name}</div>
-              <div>{a.email}</div>
-              <div>{a.position}</div>
-              <div>{a.status}</div>
+        <button style={styles.navBtn} onClick={() => setView("applications")}>
+          Applications
+        </button>
 
-              <button onClick={() => updateStatus(a.id, "Approved")}>✔</button>
-              <button onClick={() => updateStatus(a.id, "Rejected")}>✖</button>
-              <button onClick={() => removeApp(a.id)}>🗑</button>
+        <button style={styles.logoutBtn} onClick={logout}>
+          Logout
+        </button>
+      </div>
+
+      {/* MAIN */}
+      <div style={styles.main}>
+        <h2>Admin Panel</h2>
+
+        {view === "dashboard" && (
+          <div style={styles.card}>
+            <h3>Overview</h3>
+            <p>Total Applications: {apps.length}</p>
+          </div>
+        )}
+
+        {view === "applications" && (
+          <div style={styles.table}>
+            <div style={styles.rowHeader}>
+              <div>Name</div>
+              <div>Email</div>
+              <div>Position</div>
+              <div>Status</div>
+              <div>Actions</div>
             </div>
-          ))}
-        </div>
+
+            {apps.map((a) => (
+              <div key={a.id} style={styles.row}>
+                <div>{a.name}</div>
+                <div>{a.email}</div>
+                <div>{a.position}</div>
+                <div>{a.status}</div>
+
+                <div>
+                  <button onClick={() => updateStatus(a.id, "Approved")}>✔</button>
+                  <button onClick={() => updateStatus(a.id, "Rejected")}>✖</button>
+                  <button onClick={() => removeApp(a.id)}>🗑</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-/* ---------------- STYLE ---------------- */
+/* ---------------- STYLES ---------------- */
 const styles = {
-  page: {
-    fontFamily: "Arial",
-    background: "#0b3d91",
-    minHeight: "100vh",
+  loginPage: {
+    height: "100vh",
     display: "flex",
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    background: "#0b2e6b",
+    fontFamily: "Arial"
   },
-  card: {
+
+  loginCard: {
     background: "white",
-    padding: 20,
-    width: 350,
+    padding: 25,
+    width: 360,
     borderRadius: 10
   },
-  cardFull: {
-    background: "white",
-    padding: 20,
-    width: "90%",
-    borderRadius: 10
-  },
+
   input: {
     width: "100%",
     padding: 10,
     margin: 5
   },
+
   btn: {
     width: "100%",
     padding: 10,
-    background: "#007bff",
-    color: "white"
+    background: "#0078d7",
+    color: "white",
+    border: "none",
+    marginTop: 10
   },
-  logout: {
-    float: "right",
+
+  layout: {
+    display: "flex",
+    fontFamily: "Arial"
+  },
+
+  sidebar: {
+    width: 220,
+    height: "100vh",
+    background: "#0b2e6b",
+    color: "white",
+    padding: 20
+  },
+
+  navBtn: {
+    width: "100%",
+    padding: 10,
+    marginTop: 10,
+    background: "transparent",
+    color: "white",
+    border: "1px solid white"
+  },
+
+  logoutBtn: {
+    width: "100%",
+    padding: 10,
+    marginTop: 30,
     background: "red",
-    color: "white"
+    color: "white",
+    border: "none"
   },
+
+  main: {
+    flex: 1,
+    padding: 20,
+    background: "#f4f6f8"
+  },
+
+  card: {
+    background: "white",
+    padding: 20,
+    borderRadius: 10
+  },
+
   table: {
-    marginTop: 20
+    background: "white",
+    padding: 10,
+    borderRadius: 10
   },
+
+  rowHeader: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
+    fontWeight: "bold",
+    padding: 10,
+    borderBottom: "2px solid #ddd"
+  },
+
   row: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 1fr auto auto auto",
-    gap: 10,
+    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
     padding: 10,
-    borderBottom: "1px solid #ccc"
+    borderBottom: "1px solid #eee"
   }
 };
