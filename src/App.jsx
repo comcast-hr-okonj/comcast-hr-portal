@@ -18,7 +18,7 @@ export default function App() {
     position: ""
   });
 
-  // LOAD APPLICATIONS (ADMIN)
+  // LOAD APPLICATIONS
   const loadApps = async (authToken) => {
     try {
       const res = await fetch(`${API}/applications`, {
@@ -102,7 +102,7 @@ export default function App() {
     }
   };
 
-  // LOGIN PAGE
+  // UI (LOGIN PAGE)
   if (!token) {
     return (
       <div style={{ padding: 20 }}>
