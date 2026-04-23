@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 export default function App() {
-  // ✅ FIXED: MUST use Render backend (NOT localhost)
   const API = "https://comcast-hr-portal.onrender.com";
 
   const [token, setToken] = useState("");
@@ -19,27 +18,9 @@ export default function App() {
     position: ""
   });
 
-  // 📝 SUBMIT APPLICATION
-  const submit = async () => {
-    try {
-      const res = await fetch(API + "/applications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || "Submit failed");
-        return;
-      }
-
-      alert("Application submitted!");
-    } catch (err) {
-      console.log(err);
-      alert("Network error");
-    }
+  // 🧪 TEST BUTTON (you requested this)
+  const submit = () => {
+    alert("BUTTON CLICKED");
   };
 
   // 🔐 LOGIN
@@ -53,6 +34,8 @@ export default function App() {
 
       const data = await res.json();
 
+      console.log("LOGIN:", res.status, data);
+
       if (!res.ok) {
         alert(data.error || "Login failed");
         return;
@@ -63,7 +46,7 @@ export default function App() {
 
     } catch (err) {
       console.log(err);
-      alert("Network error");
+      alert("Backend not reachable");
     }
   };
 
@@ -82,7 +65,7 @@ export default function App() {
     }
   };
 
-  // 🌐 PUBLIC PAGE
+  // 🌐 PUBLIC UI
   if (!token) {
     return (
       <div>
@@ -108,6 +91,7 @@ export default function App() {
           onChange={(e) => setForm({ ...form, position: e.target.value })}
         />
 
+        {/* 🧪 TEST BUTTON */}
         <button onClick={submit}>Submit</button>
 
         <hr />
