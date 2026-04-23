@@ -5,17 +5,18 @@ export default function App() {
 
   const [token, setToken] = useState("");
   const [apps, setApps] = useState([]);
-  const [dark, setDark] = useState(false);
 
   const [login, setLogin] = useState({ email: "", password: "" });
+
   const [form, setForm] = useState({
     name: "",
     email: "",
     number: "",
-    position: ""
+    position: "",
+    address: ""
   });
 
-  // LOAD
+  // LOAD APPLICATIONS
   const loadApps = async (t) => {
     const res = await fetch(`${API}/applications`, {
       headers: { Authorization: t }
@@ -40,7 +41,7 @@ export default function App() {
     else alert("Wrong credentials");
   };
 
-  // SUBMIT
+  // SUBMIT APPLICATION
   const submit = async () => {
     await fetch(`${API}/applications`, {
       method: "POST",
@@ -49,6 +50,14 @@ export default function App() {
     });
 
     alert("Application submitted");
+
+    setForm({
+      name: "",
+      email: "",
+      number: "",
+      position: "",
+      address: ""
+    });
   };
 
   // UPDATE STATUS
@@ -65,7 +74,7 @@ export default function App() {
     loadApps(token);
   };
 
-  // DELETE
+  // DELETE APPLICATION
   const remove = async (id) => {
     await fetch(`${API}/applications/${id}`, {
       method: "DELETE",
@@ -80,18 +89,12 @@ export default function App() {
   /* ================= PUBLIC PAGE ================= */
   if (!token) {
     return (
-      <div style={dark ? styles.darkPage : styles.page}>
+      <div style={styles.page}>
 
-        <img
-          src="https://upload.wikimedia.org/wikipedia/commons/8/8b/Comcast_Logo.png"
-          style={{ width: 130 }}
-        />
-
-        <h2>Comcast HR Portal</h2>
-        <p>Enterprise SaaS Recruitment System</p>
+        <h1>Comcast HR Portal</h1>
+        <p>Enterprise Recruitment System</p>
 
         <div style={styles.card}>
-
           <h3>Apply for Job</h3>
 
           <input placeholder="Name" style={styles.input}
@@ -105,6 +108,9 @@ export default function App() {
 
           <input placeholder="Position" style={styles.input}
             onChange={(e) => setForm({ ...form, position: e.target.value })} />
+
+          <input placeholder="Address" style={styles.input}
+            onChange={(e) => setForm({ ...form, address: e.target.value })} />
 
           <button style={styles.btn} onClick={submit}>
             Submit Application
@@ -124,10 +130,6 @@ export default function App() {
             Login
           </button>
 
-          <button onClick={() => setDark(!dark)}>
-            Toggle Dark Mode
-          </button>
-
         </div>
       </div>
     );
@@ -138,31 +140,46 @@ export default function App() {
     <div style={styles.layout}>
 
       <div style={styles.sidebar}>
-        <img
-          src="https://upload.wikimedia.org/wikipedia/commons/8/8b/Comcast_Logo.png"
-          style={{ width: 120 }}
-        />
-
+        <h3>HR Admin</h3>
         <button onClick={logout} style={styles.logout}>
           Logout
         </button>
       </div>
 
       <div style={styles.main}>
-        <h2>Admin Dashboard</h2>
+        <h2>Applications Dashboard</h2>
 
         {apps.map((a) => (
-          <div key={a.id} style={styles.row}>
-            <div>{a.name}</div>
-            <div>{a.email}</div>
+          <div key={a.id} style={styles.cardRow}>
+
+            <div>
+              <b>{a.name}</b>
+              <div style={styles.small}>{a.email}</div>
+            </div>
+
             <div>{a.position}</div>
-            <div>{a.status}</div>
+            <div>{a.address}</div>
+
+            <div>
+              <span style={{
+                ...styles.badge,
+                background:
+                  a.status === "Approved"
+                    ? "green"
+                    : a.status === "Rejected"
+                    ? "red"
+                    : "orange"
+              }}>
+                {a.status}
+              </span>
+            </div>
 
             <div>
               <button onClick={() => updateStatus(a.id, "Approved")}>✔</button>
               <button onClick={() => updateStatus(a.id, "Rejected")}>✖</button>
               <button onClick={() => remove(a.id)}>🗑</button>
             </div>
+
           </div>
         ))}
       </div>
@@ -173,28 +190,71 @@ export default function App() {
 /* ================= STYLES ================= */
 const styles = {
   page: { textAlign: "center", padding: 20 },
-  darkPage: { background: "#0b0f1a", color: "white", minHeight: "100vh", textAlign: "center", padding: 20 },
 
-  card: { background: "white", padding: 20, width: 380, margin: "auto" },
+  card: {
+    background: "#fff",
+    padding: 20,
+    width: 400,
+    margin: "auto",
+    borderRadius: 10
+  },
 
-  input: { width: "100%", padding: 10, margin: 5 },
+  input: {
+    width: "100%",
+    padding: 10,
+    margin: 5
+  },
 
-  btn: { width: "100%", padding: 10, background: "#0078d7", color: "white" },
+  btn: {
+    width: "100%",
+    padding: 10,
+    background: "#0078d7",
+    color: "white"
+  },
 
-  loginBtn: { width: "100%", padding: 10, background: "#0b2e6b", color: "white" },
+  loginBtn: {
+    width: "100%",
+    padding: 10,
+    background: "#0b2e6b",
+    color: "white"
+  },
 
   layout: { display: "flex" },
 
-  sidebar: { width: 200, background: "#0b2e6b", color: "white", height: "100vh", padding: 10 },
+  sidebar: {
+    width: 180,
+    background: "#0b2e6b",
+    color: "white",
+    height: "100vh",
+    padding: 10
+  },
 
-  logout: { marginTop: 20, background: "red", color: "white" },
+  logout: {
+    marginTop: 20,
+    background: "red",
+    color: "white"
+  },
 
-  main: { flex: 1, padding: 20 },
+  main: {
+    flex: 1,
+    padding: 20
+  },
 
-  row: {
+  cardRow: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr",
-    padding: 10,
-    borderBottom: "1px solid #ccc"
+    gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
+    padding: 15,
+    marginBottom: 10,
+    background: "#fff",
+    borderRadius: 10
+  },
+
+  small: { fontSize: 12, color: "#666" },
+
+  badge: {
+    padding: "5px 10px",
+    borderRadius: 20,
+    color: "white",
+    fontSize: 12
   }
 };
